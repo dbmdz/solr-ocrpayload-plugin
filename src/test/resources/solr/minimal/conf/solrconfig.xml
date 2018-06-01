@@ -1,0 +1,16 @@
+<config>
+  <luceneMatchVersion>${tests.luceneMatchVersion:LUCENE_CURRENT}</luceneMatchVersion>
+  <dataDir>${solr.data.dir:}</dataDir>
+  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.RAMDirectoryFactory}"/>
+  <schemaFactory class="ClassicIndexSchemaFactory"/>
+
+  <requestHandler name="standard" class="solr.StandardRequestHandler">
+    <arr name="last-components">
+      <str>ocr_highlight</str>
+    </arr>
+  </requestHandler>
+
+  <searchComponent name="ocr_highlight"
+                   class="de.digitalcollections.solr.plugin.components.ocrhighlighting.OcrHighlighting"
+                   coordinateBits="10" pageBits="0" lineBits="0" wordBits="0" />
+</config>
