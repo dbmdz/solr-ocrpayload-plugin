@@ -131,9 +131,9 @@ To use it, first add the `DelimitedOcrInfoPayloadTokenFilterFactory`☕ filter t
 
 The filter takes five parameters:
 
-- `coordinateBits`:  Number of bits to use for encoding OCR coordinates in the index. (mandatory)
-- `delimiter`: Character used for delimiting the payload from the token in the input document (default: `|`)<br/>
-   A value of `10` (default) is recommended, resulting in coordBits to approximately three decimal places.
+- `delimiter`: Character used for delimiting the payload from the token in the input document (default: `|`)
+- `coordinateBits`:  Number of bits to use for encoding OCR coordinates in the index. (mandatory)<br/>
+   A value of `10` (default) is recommended, resulting in coordBits to approximately two decimal places.
 - `wordBits`: Number of bits to use for encoding the word index.<br/>
    Set to 0 (default) to disable storage of the word index.
 - `lineBits`: Number of bits to use for encoding the line index.<br/>
