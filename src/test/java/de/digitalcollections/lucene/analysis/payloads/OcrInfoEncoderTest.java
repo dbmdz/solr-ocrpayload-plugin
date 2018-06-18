@@ -21,11 +21,11 @@ public class OcrInfoEncoderTest {
     byte[] withPositionAndPage = {(byte) 0x36, (byte) 0x20, (byte) 0x21, (byte) 0xa1, (byte) 0xce, (byte) 0x10, (byte) 0x36};
     byte[] withPageLineWord = {(byte) 0x01, (byte) 0xb0, (byte) 0x54, (byte) 0x0c, (byte) 0x1f, (byte) 0x8f, (byte) 0x05, (byte) 0x85, (byte) 0xd3};
     Map<String, byte[]> params = ImmutableMap.of(
-            "withPageooo|p27x131y527w879h053", withPage,
-            "withoutPage|x131y527w879h053", withoutPage,
-            "withWordoooo|n32x131y527w879h053", withPosition,
-            "withPageWord|p27n32x131y527w879h053", withPositionAndPage,
-        "withPageLineWord|p27l42n12x123y234w345h456", withPageLineWord);
+            "withPageooo|p:27,x:13.1,y:52.7,w:87.9,h:5.3,", withPage,
+            "withoutPage|x:13.1,y:52.7,w:87.9,h:5.3,", withoutPage,
+            "withWordoooo|n:32,x:13.1,y:52.7,w:87.9,h:5.3,", withPosition,
+            "withPageWord|p:27,n:32,x:13.1,y:52.7,w:87.9,h:5.3,", withPositionAndPage,
+        "withPageLineWord|p:27,l:42,n:12,x:12.3,y:23.4,w:34.5,h:45.6,", withPageLineWord);
     return params.entrySet().stream().map(e -> Arguments.of(e.getKey(), e.getValue()));
   }
 

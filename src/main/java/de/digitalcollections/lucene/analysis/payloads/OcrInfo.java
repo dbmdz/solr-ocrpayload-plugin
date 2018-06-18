@@ -5,8 +5,11 @@ import com.google.common.math.IntMath;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OcrInfo implements Comparable<OcrInfo> {
+  private static final Pattern PAYLOAD_PAT = Pattern.compile("(\\D+):([0-9.]+),?");
 
   private float horizontalOffset = -1.0f;
   private float verticalOffset = -1.0f;
@@ -47,28 +50,19 @@ public class OcrInfo implements Comparable<OcrInfo> {
   /**
    * Parse an {@link OcrInfo} object from a character buffer.
    *
-   * The string contains concatenated pairs of single-character keys and numerical values, e.g. `x1337`.
+   * The string contains comma-separated pairs of single-character keys and numerical
+   * values, e.g. `x:13.37`.
+   *
    * Valid keys are:
    * - **p**: Page index, ranging from 0 to 2^pageBits (optional)
    * - **l**: Line index, ranging from 0 to 2^lineBits (optional)
    * - **n**: Word index, ranging from 0 to 2^wordBits (optional)
-   * - **x**: Horizontal offset as floating point value in range [0...1] without leading '0.' (mandatory)
-   * - **y**: Vertical offset as floating point value in range [0...1] without leading '0.' (mandatory)
-   * - **w**: Width as floating point value in range [0...1] without leading '0.' (mandatory)
-   * - **h**: Height as floating point value in range [0...1] without leading '0.' (mandatory)
+   * - **x**: Horizontal offset as floating point percentage in range [0...100] (mandatory)
+   * - **y**: Vertical offset as floating point percentage in range [0...100] (mandatory)
+   * - **w**: Width as floating point percentage in range [0...100] (mandatory)
+   * - **h**: Height as floating point percentage in range [0...100] (mandatory)
    *
-   * Here es an example:
-   *
-   * **Payload string:** `p27l50n13x131y527w879h053
-   *
-   * **Decoding:**
-   *
-   * ```
-   *  step    |  pageIndex | lineIndex  | wordIndex |   x   |   y   |   w   |  h
-   * ---------|------------|------------|-----------|-------|-------|-------|-------
-   * Split    |      27    |       50   |      13   |   131 |   527 |   879 |    53
-   * Decoded  |      27    |       50   |      13   | 0.131 | 0.527 | 0.879 | 0.053
-   * ```
+   * Here es an example: `p:27,l:50,n:13,x:13.1,y:52.7,w:87.9,h:5.3`
    *
    * @param buffer Input character buffer
    * @param offset Offset of the encoded character information
@@ -82,17 +76,16 @@ public class OcrInfo implements Comparable<OcrInfo> {
     OcrInfo info = new OcrInfo();
 
     String payload = new String(buffer, offset, length).toLowerCase();
-    String[] payloadParts = payload.split("(?=\\D)");
+    Matcher m = PAYLOAD_PAT.matcher(payload);
     Set<Character> seenKeys = new HashSet<>();
-
-    for (String payloadPart : payloadParts) {
-      char key = payloadPart.charAt(0);
+    while (m.find()) {
+      char key = m.group(1).charAt(0);
       if (seenKeys.contains(key)) {
         throw new IllegalArgumentException(String.format("Invalid payload %s: duplicate key '%c'", payload, key));
       } else {
         seenKeys.add(key);
       }
-      String value = payloadPart.substring(1);
+      String value = m.group(2);
       switch (key) {
         case 'p':
           info.setPageIndex(parseIndex(value, pageBits)); break;
@@ -101,13 +94,13 @@ public class OcrInfo implements Comparable<OcrInfo> {
         case 'n':
           info.setWordIndex(parseIndex(value, wordBits)); break;
         case 'x':
-          info.setHorizontalOffset(Float.parseFloat("0." + value)); break;
+          info.setHorizontalOffset(Float.parseFloat(value)/100f); break;
         case 'y':
-          info.setVerticalOffset(Float.parseFloat("0." + value)); break;
+          info.setVerticalOffset(Float.parseFloat(value)/100f); break;
         case 'w':
-          info.setWidth(Float.parseFloat("0." + value)); break;
+          info.setWidth(Float.parseFloat(value)/100f); break;
         case 'h':
-          info.setHeight(Float.parseFloat("0." + value)); break;
+          info.setHeight(Float.parseFloat(value)/100f); break;
         default:
           throw new IllegalArgumentException(String.format(
               "Could not parse OCR bounding box information, string was %s, invalid character was %c",
@@ -153,7 +146,7 @@ public class OcrInfo implements Comparable<OcrInfo> {
 
   private void checkCoordinate(float coordinate) {
     if (coordinate > 1) {
-      throw new IllegalArgumentException(String.format("Coordinates can at most be 1.0, was %1f!", coordinate));
+      throw new IllegalArgumentException(String.format("Coordinates can at most be 100, was %1f!", coordinate*100));
     }
   }
 

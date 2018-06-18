@@ -23,7 +23,7 @@ for a detailed description of available keys.
 
 ```json
 [{ "id": "test_document",
-   "ocr_text": "this|p13l5n6x111y222w333h444 is|p13l5n7x222y333w444h555 a|p13l5n8x333y333w444h555 test|p13l5n9x444y333w444h555" }]
+   "ocr_text": "this|p:13,l:5,n:6,x:11.1,y:22.2,w:33.3,h:44.4 is|p:13,l:5,n:7,x:22.2,y:33.3,w:44.4,h:55.5 a|p:13,l:5,n:8,x:33.3,y:33.3,w:44.4,h:55.5 test|p:13,l:5,n:9,x:44.4,y:33.3,w:44.4h:55.5" }]
 ```
 
 **Querying**:
@@ -141,14 +141,14 @@ The filter takes five parameters:
 - `pageBits`: Number of bits to use for encoding the page index.<br/>
    Set to 0 (default) to disable storage of the page index.
                
-The filter expects the input text to have the coordinates encoded as floating point values between
-0 and 1 and with the leading `0.` discarded and laid out as follows (values in brackets are optional):
+The filter expects the input text to have the coordinates encoded as floating point percentages between
+0 and 100, laid out as follows (values in brackets are optional):
 
-`<token><delimiter>[p<pageIdx>][l<lineIdx>][n<wordIdx>]x<x>y<y>w<w>h<h>`
+`<token><delimiter>[p:<page-idx>,][l:<line-idx>,][n:<word-idx>,]x:<x-position>,y:<y-position>,w:<width>,h:<height>`
 
 As an example, consider the token `foobar` with an OCR box of `(0.50712, 0.31432, 0.87148, 0.05089)`,
 the configured delimiter `☞` and storage of indices for the word (`30`), line (`12`) and page (`13`):
-`foobar☞p13l12n30x507y314w871h051`.
+`foobar☞p:13,l:12,n:30,x:50.7,y:31.4,w:87.1,h:5.1`.
 
 Finally, you just have to configure your schema to use the field type defined above. Storing the content is **not**
 recommended, since it significantly increases the index size and is not used at all for querying and highlighting:

@@ -3,19 +3,20 @@ package de.digitalcollections.solr.plugin.components.ocrhighlighting;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.revinate.assertj.json.JsonPathAssert;
-import java.math.BigDecimal;
 import org.apache.solr.SolrTestCaseJ4;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.math.BigDecimal;
 
 /** Test that configuring the plugin without page/line/word indices works as expected. **/
 public class MinimalHighlightingTest extends SolrTestCaseJ4 {
   @BeforeClass
   public static void beforeClass() throws Exception {
     initCore("conf/solrconfig.xml", "conf/schema.xml", "src/test/resources/solr", "minimal");
-    assertU(adoc("ocr_text", "two|x123y432w543h654 one|x654y543w432h321", "id", "101"));
-    assertU(adoc("ocr_text", "three|x127y482w549h654 two|x654y543w431h341 five|x0y0w0h0 "
-        + "four|x111y111w111h111", "id", "102"));
+    assertU(adoc("ocr_text", "two|x:12.3,y:43.2,w:54.3,h:65.4, one|x:65.4,y:54.3,w:43.2,h:32.1,", "id", "101"));
+    assertU(adoc("ocr_text", "three|x:12.7,y:48.2,w:54.9,h:65.4, two|x:65.4,y:54.3,w:43.1,h:34.1, five|x:0,y:0,w:0,h:0, "
+        + "four|x:11.1,y:11.1,w:11.1,h:11.1,", "id", "102"));
 
     assertU(commit());
   }

@@ -18,7 +18,7 @@ public class DistributedOcrHighlightingTest extends BaseDistributedSearchTestCas
     assertTrue("wrong highlighter: " + highlighter.getClass(),
         highlighter instanceof OcrHighlighting);
 
-    assertU(adoc("ocr_text", "contains|p20l3n5x111y222w333h444 position|p20l4n6x555y666w777h888", "id", "105"));
+    assertU(adoc("ocr_text", "contains|p:20,l:3,n:5,x:11.1,y:22.2,w:33.3,h:44.4, position|p:20,l:4,n:6,x:55.5,y:66.6,w:77.7,h:88.8,", "id", "105"));
 
     assertU(BaseDistributedSearchTestCase.commit());
   }

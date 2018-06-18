@@ -14,13 +14,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class OcrInfoTest {
   public static Stream<Arguments> fixtureProvider() {
     return Stream.of(
-        Arguments.of(new OcrInfo(27, .131f, .527f, .879f, .053f), "p27x131y527w879h053"),
-        Arguments.of(new OcrInfo(.131f, .527f, .879f, .053f), "x131y527w879h053"),
-        Arguments.of(new OcrInfo(-1, 50, .123f, .456f, .789f, .091f), "l50x123y456w789h091"),
-        Arguments.of(new OcrInfo(123,456,.123f,.456f, .234f, .456f), "p123l456x123y456w234h456"),
-        Arguments.of(new OcrInfo( 123, 456, 511, .123f, .234f, .345f, .456f), "p123l456n511x123y234w345h456"),
-        Arguments.of(new OcrInfo(123, -1, 456, .123f, .234f, .345f, .456f), "p123n456x123y234w345h456"),
-        Arguments.of(new OcrInfo( 123, 456, 511, .1234f, .2345f, .3456f, .4567f), "p123l456n511x1234y2345w3456h4567")
+        Arguments.of(new OcrInfo(27, .131f, .527f, .879f, .053f), "p:27,x:13.1,y:52.7,w:87.9,h:5.3"),
+        Arguments.of(new OcrInfo(.131f, .527f, .879f, .053f), "x:13.1,y:52.7,w:87.9,h:5.3"),
+        Arguments.of(new OcrInfo(-1, 50, .123f, .456f, .789f, .091f), "l:50,x:12.3,y:45.6,w:78.9,h:9.1"),
+        Arguments.of(new OcrInfo(123,456,.123f,.456f, .234f, .456f), "p:123,l:456,x:12.3,y:45.6,w:23.4,h:45.6"),
+        Arguments.of(new OcrInfo( 123, 456, 511, .123f, .234f, .345f, .456f), "p:123,l:456,n:511,x:12.3,y:23.4,w:34.5,h:45.6"),
+        Arguments.of(new OcrInfo(123, -1, 456, .123f, .234f, .345f, .456f), "p:123,n:456,x:12.3,y:23.4,w:34.5,h:45.6"),
+        Arguments.of(new OcrInfo( 123, 456, 511, .1234f, .2345f, .3456f, .4567f), "p:123,l:456,n:511,x:12.34,y:23.45,w:34.56,h:45.67")
     );
   }
 
@@ -48,15 +48,15 @@ public class OcrInfoTest {
 
   @Test
   public void keysMustNotBeUsedMultipleTimes() {
-    String payload = "p12x345n56x789y876w543h21";
+    String payload = "p:12,x:34.5,n:56,x:78.9,y:87.6,w:54.3,h:21";
     assertThatThrownBy(() -> OcrInfo.parse(toChars(payload), 0, payload.length(), 9, 11, 12))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Invalid payload p12x345n56x789y876w543h21: duplicate key 'x'");
+        .hasMessageContaining("Invalid payload p:12,x:34.5,n:56,x:78.9,y:87.6,w:54.3,h:21: duplicate key 'x'");
   }
 
   @Test
   public void catchOverFlow() {
-    String overflow = "p12l34n512x789y876w543h021";
+    String overflow = "p:12,l:34,n:512,x:78.9,y:87.6,w:54.3,h:2.1";
     assertThatThrownBy(() -> OcrInfo.parse(toChars(overflow), 0, overflow.length(), 9, 11, 12))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("512 needs more than 9 bits (valid values range from 0 to 511)");
@@ -64,19 +64,19 @@ public class OcrInfoTest {
 
   @Test
   public void missingParametersAreCaught() {
-    String missingLine = "p12n56x789y876w543h021";
+    String missingLine = "p:12,n:56,x:78.9,y:87.6,w:54.3,h:2.1";
     assertThatThrownBy(() -> OcrInfo.parse(toChars(missingLine), 0, missingLine.length(), 9, 11, 12))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("fix payload or set the 'lineBits' option to 0.");
-    String missingWord = "p12l34x789y876w543h021";
+    String missingWord = "p:12,l:34,x:78.9,y:87.6,w:54.3,h:2.1";
     assertThatThrownBy(() -> OcrInfo.parse(toChars(missingWord), 0, missingWord.length(), 9, 11, 12))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("fix payload or set the 'wordBits' option to 0.");
-    String missingPage = "l34n56x789y876w543h021";
+    String missingPage = "l:34,n:56,x:78.9,y:87.6,w:54.3,h:2.1";
     assertThatThrownBy(() -> OcrInfo.parse(toChars(missingPage), 0, missingPage.length(), 9, 11, 12))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("fix payload or set the 'pageBits' option to 0.");
-    String missingCoord = "p12l34n56x789y876w543";
+    String missingCoord = "p:12,l:34,n:56,x:78.9,y:87.6,w:54.3";
     assertThatThrownBy(() -> OcrInfo.parse(toChars(missingCoord), 0, missingCoord.length(), 9, 11, 12))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("coordinates are missing from payload ");

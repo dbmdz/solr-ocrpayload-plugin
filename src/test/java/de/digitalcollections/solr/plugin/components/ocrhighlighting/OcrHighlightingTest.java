@@ -19,13 +19,13 @@ public class OcrHighlightingTest extends SolrTestCaseJ4 {
 
     String ocrText = String.join(" ", Files
         .readAllLines(Paths.get(OcrHighlighting.class.getResource("/data/ocrtext_full.txt").toURI())));
-    assertU(adoc("ocr_text", "two|p27l13n24x123y432w543h654 one|p28l27n64x654y543w432h321", "id", "101"));
-    assertU(adoc("ocr_text", "three|p28l14n25x127y482w549h654 two|p29l27n64x654y543w431h341 five|p30l17n80x0y0w0h0 "
-        + "four|p31l32n33x111y111w111h111", "id", "102"));
+    assertU(adoc("ocr_text", "two|p:27,l:13,n:24,x:12.3,y:43.2,w:54.3,h:65.4, one|p:28,l:27,n:64,x:65.4,y:54.3,w:43.2,h:32.1", "id", "101"));
+    assertU(adoc("ocr_text", "three|p:28,l:14,n:25,x:12.7,y:48.2,w:54.9,h:65.4, two|p:29,l:27,n:64,x:65.4,y:54.3,w:43.1,h:34.1, five|p:30,l:17,n:80,x:0,y:0,w:0,h:0, "
+        + "four|p:31,l:32,n:33,x:11.1,y:11.1,w:11.1,h:11.1", "id", "102"));
     assertU(adoc("ocr_text", ocrText, "id", "103"));
 
     // Test with a dynamic field
-    assertU(adoc("body_ocr", "one|p42l13n55x111y222w333h444 two|p42l13n66x555y666w777h888", "id", "106"));
+    assertU(adoc("body_ocr", "one|p:42,l:13,n:55,x:11.1,y:22.2,w:33.3,h:44.4, two|p:42,l:13,n:66,x:55.5,y:66.6,w:77.7,h:88.8", "id", "106"));
 
     assertU(commit());
   }
