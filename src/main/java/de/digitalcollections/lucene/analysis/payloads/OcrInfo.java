@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 public class OcrInfo implements Comparable<OcrInfo> {
   private static final Pattern PAYLOAD_PAT = Pattern.compile("(\\D+):([0-9.]+),?");
 
+  private boolean hasAbsoluteCoordinates = false;
   private float horizontalOffset = -1.0f;
   private float verticalOffset = -1.0f;
   private float width = -1.0f;
@@ -23,6 +24,32 @@ public class OcrInfo implements Comparable<OcrInfo> {
 
   OcrInfo() {
     // NOP
+  }
+
+  public OcrInfo(int horizontalOffset, int verticalOffset, int width, int height) {
+    this(-1, horizontalOffset, verticalOffset, width, height);
+    this.setHasAbsoluteCoordinates(true);
+  }
+
+  public OcrInfo(int pageIndex, int horizontalOffset, int verticalOffset, int width, int height) {
+    this(pageIndex, -1, -1, horizontalOffset, verticalOffset, width, height);
+    this.setHasAbsoluteCoordinates(true);
+  }
+
+  public OcrInfo(int pageIndex, int lineIndex, int horizontalOffset, int verticalOffset, int width, int height) {
+    this(pageIndex, lineIndex, -1, horizontalOffset, verticalOffset, width, height);
+    this.setHasAbsoluteCoordinates(true);
+  }
+
+  public OcrInfo(int pageIndex, int lineIndex, int wordIndex, int horizontalOffset, int verticalOffset, int width, int height) {
+    this.setHasAbsoluteCoordinates(true);
+    this.setHorizontalOffset(horizontalOffset);
+    this.setVerticalOffset(verticalOffset);
+    this.setWidth(width);
+    this.setHeight(height);
+    this.setPageIndex(pageIndex);
+    this.setLineIndex(lineIndex);
+    this.setWordIndex(wordIndex);
   }
 
   public OcrInfo(float horizontalOffset, float verticalOffset, float width, float height) {
@@ -57,12 +84,17 @@ public class OcrInfo implements Comparable<OcrInfo> {
    * - **p**: Page index, ranging from 0 to 2^pageBits (optional)
    * - **l**: Line index, ranging from 0 to 2^lineBits (optional)
    * - **n**: Word index, ranging from 0 to 2^wordBits (optional)
-   * - **x**: Horizontal offset as floating point percentage in range [0...100] (mandatory)
-   * - **y**: Vertical offset as floating point percentage in range [0...100] (mandatory)
-   * - **w**: Width as floating point percentage in range [0...100] (mandatory)
-   * - **h**: Height as floating point percentage in range [0...100] (mandatory)
+   * - **x**: Horizontal offset as floating point percentage in range [0...100]
+   *          OR absolute position as unsigned integer in range [0...2^coordBits] (mandatory)
+   * - **y**: Vertical offset as floating point percentage in range [0...100]
+   *          OR absolute position as unsigned integer in range [0...2^coordBits] (mandatory)
+   * - **w**: Width as floating point percentage in range [0...100]
+   *          OR absolute position as unsigned integer in range [0...2^coordBits] (mandatory)
+   * - **h**: Height as floating point percentage in range [0...100]
+   *          OR absolute position as unsigned integer in range [0...2^coordBits] (mandatory)
    *
    * Here es an example: `p:27,l:50,n:13,x:13.1,y:52.7,w:87.9,h:5.3`
+   * or, with integral (absolute) coordinate
    *
    * @param buffer Input character buffer
    * @param offset Offset of the encoded character information
@@ -70,10 +102,14 @@ public class OcrInfo implements Comparable<OcrInfo> {
    * @param wordBits Number of bits used for encoding the word index
    * @param lineBits Number of bits used for encoding the line index
    * @param pageBits Number of bits used for encoding the page index
+   * @param coordBits Number of bits used for encoding the coordinates
+   * @param absoluteCoordinates Whether the coordinates are stored absolute or relative (percent-values)
    * @return The decoded {@link OcrInfo} instance
    */
-  public static OcrInfo parse(char[] buffer, int offset, int length, int wordBits, int lineBits, int pageBits) {
+  public static OcrInfo parse(char[] buffer, int offset, int length, int wordBits, int lineBits, int pageBits,
+                              int coordBits, boolean absoluteCoordinates) {
     OcrInfo info = new OcrInfo();
+    info.setHasAbsoluteCoordinates(absoluteCoordinates);
 
     String payload = new String(buffer, offset, length).toLowerCase();
     Matcher m = PAYLOAD_PAT.matcher(payload);
@@ -88,19 +124,39 @@ public class OcrInfo implements Comparable<OcrInfo> {
       String value = m.group(2);
       switch (key) {
         case 'p':
-          info.setPageIndex(parseIndex(value, pageBits)); break;
+          info.setPageIndex(parseIntValue(value, pageBits)); break;
         case 'l':
-          info.setLineIndex(parseIndex(value, lineBits)); break;
+          info.setLineIndex(parseIntValue(value, lineBits)); break;
         case 'n':
-          info.setWordIndex(parseIndex(value, wordBits)); break;
+          info.setWordIndex(parseIntValue(value, wordBits)); break;
         case 'x':
-          info.setHorizontalOffset(Float.parseFloat(value)/100f); break;
+          if (absoluteCoordinates) {
+            info.setHorizontalOffset(parseIntValue(value, coordBits));
+          } else {
+            info.setHorizontalOffset(Float.parseFloat(value)/100f);
+          }
+          break;
         case 'y':
-          info.setVerticalOffset(Float.parseFloat(value)/100f); break;
+          if (absoluteCoordinates) {
+            info.setVerticalOffset(parseIntValue(value, coordBits));
+          } else {
+            info.setVerticalOffset(Float.parseFloat(value)/100f);
+          }
+          break;
         case 'w':
-          info.setWidth(Float.parseFloat(value)/100f); break;
+          if (absoluteCoordinates) {
+            info.setWidth(parseIntValue(value, coordBits));
+          } else {
+            info.setWidth(Float.parseFloat(value)/100f);
+          }
+          break;
         case 'h':
-          info.setHeight(Float.parseFloat(value)/100f); break;
+          if (absoluteCoordinates) {
+            info.setHeight(parseIntValue(value, coordBits));
+          } else {
+            info.setHeight(Float.parseFloat(value)/100f);
+          }
+          break;
         default:
           throw new IllegalArgumentException(String.format(
               "Could not parse OCR bounding box information, string was %s, invalid character was %c",
@@ -127,7 +183,7 @@ public class OcrInfo implements Comparable<OcrInfo> {
     return info;
   }
 
-  private static int parseIndex(String value, int numBits) {
+  private static int parseIntValue(String value, int numBits) {
     int index = Integer.parseInt(value);
     if (index >= IntMath.pow(2, numBits)) {
       throw new IllegalArgumentException(String.format("Value %d needs more than %d bits (valid values range from 0 to %d).",
@@ -155,7 +211,9 @@ public class OcrInfo implements Comparable<OcrInfo> {
   }
 
   public void setVerticalOffset(float verticalOffset) {
-    checkCoordinate(verticalOffset);
+    if (!hasAbsoluteCoordinates) {
+      checkCoordinate(verticalOffset);
+    }
     this.verticalOffset = verticalOffset;
   }
 
@@ -164,7 +222,9 @@ public class OcrInfo implements Comparable<OcrInfo> {
   }
 
   public void setWidth(float width) {
-    checkCoordinate(width);
+    if (!hasAbsoluteCoordinates) {
+      checkCoordinate(width);
+    }
     this.width = width;
   }
 
@@ -173,7 +233,9 @@ public class OcrInfo implements Comparable<OcrInfo> {
   }
 
   public void setHeight(float height) {
-    checkCoordinate(height);
+    if (!hasAbsoluteCoordinates) {
+      checkCoordinate(height);
+    }
     this.height = height;
   }
 
@@ -232,5 +294,13 @@ public class OcrInfo implements Comparable<OcrInfo> {
         .thenComparing(OcrInfo::getHorizontalOffset)
         .thenComparing(OcrInfo::getVerticalOffset)
         .compare(this, other);
+  }
+
+  public boolean getHasAbsoluteCoordinates() {
+    return hasAbsoluteCoordinates;
+  }
+
+  public void setHasAbsoluteCoordinates(boolean hasAbsoluteCoordinates) {
+    this.hasAbsoluteCoordinates = hasAbsoluteCoordinates;
   }
 }

@@ -16,7 +16,7 @@
 
 **Indexing**:
 
-The OCR information is appended after each token as a concatenated list of `<key><val>` pairs, see further down
+The OCR information is appended after each token as a concatenated list of `<key>:<val>` pairs, see further down
 for a detailed description of available keys.
 
 `POST /solr/mycore/update`
@@ -91,7 +91,9 @@ format to store the OCR coordinate information in the index: We use bit-packing 
 coordinate parameters into a **byte payload**, which is not stored in the field itself, but as an associated
 [Lucene Payload](https://lucidworks.com/2017/09/14/solr-payloads/):
 
-- `x`, `y`, `w`, `h`: **Relative** coordinates of the bounding box on the page as floating point values between 0 and 1
+- `x`, `y`, `w`, `h`: Coordinates of the bounding box on the page as either:
+    - **absolute** unsigned integer offsets between 0 and `2^coordinateBits` (see below)
+    - **relative** floating point percentages between 0 and 100 (e.g. `x:42.3` for a horizontal offset of 43.2%)
 - `pageIndex`: Unsigned integer that stores the page index of a token (optional)
 - `lineIndex`: Unsigned integer that stores the line index of a token (optional)
 - `wordIndex`: Unsigned integer that stores the word index of a token (optional)
@@ -120,7 +122,7 @@ To use it, first add the `DelimitedOcrInfoPayloadTokenFilterFactory`☕ filter t
   <analyzer>
     <tokenizer class="solr.WhitespaceTokenizerFactory"/>
     <filter class="de.digitalcollections.lucene.analysis.util.DelimitedOcrInfoPayloadTokenFilterFactory"
-            delimiter="☞" coordinateBits="10" wordBits="0" lineBits="0" pageBits="12" />
+            delimiter="☞" absoluteCoordinates="false" coordinateBits="10" wordBits="0" lineBits="0" pageBits="12" />
     <filter class="solr.StandardFilterFactory"/>
     <filter class="solr.LowerCaseFilterFactory"/>
     <filter class="solr.StopFilterFactory"/>
@@ -129,9 +131,10 @@ To use it, first add the `DelimitedOcrInfoPayloadTokenFilterFactory`☕ filter t
 </fieldtype>
 ```
 
-The filter takes five parameters:
+The filter takes the following parameters:
 
 - `delimiter`: Character used for delimiting the payload from the token in the input document (default: `|`)
+- `absoluteCoordinates`: `true` or `false` to configure whether the stored coordinates are absolute
 - `coordinateBits`:  Number of bits to use for encoding OCR coordinates in the index. (mandatory)<br/>
    A value of `10` (default) is recommended, resulting in coordBits to approximately two decimal places.
 - `wordBits`: Number of bits to use for encoding the word index.<br/>
@@ -140,15 +143,23 @@ The filter takes five parameters:
    Set to 0 (default) to disable storage of the line index.
 - `pageBits`: Number of bits to use for encoding the page index.<br/>
    Set to 0 (default) to disable storage of the page index.
-               
-The filter expects the input text to have the coordinates encoded as floating point percentages between
-0 and 100, laid out as follows (values in brackets are optional):
 
-`<token><delimiter>[p:<page-idx>,][l:<line-idx>,][n:<word-idx>,]x:<x-position>,y:<y-position>,w:<width>,h:<height>`
+The filter expects an input payload after the configured `delimiter` in the input stream, with the payload being a
+pseudo-JSON structure (e.g. `k1:1,k2:3`) with the following keys:
 
-As an example, consider the token `foobar` with an OCR box of `(0.50712, 0.31432, 0.87148, 0.05089)`,
-the configured delimiter `☞` and storage of indices for the word (`30`), line (`12`) and page (`13`):
+- `p`: Page index (if `pageBits` > 0)
+- `l`: Line index  (if `lineBits` > 0)
+- `n`: Word index (if `wordBits` > 0)
+- `x`, `y`, `w`, `h`: Coordinates of the OCR box as floating point percentages or integers (if `absoluteCoordinates`)
+
+As an example, consider the token `foobar` with an OCR box of `(0.50712, 0.31432, 0.87148, 0.05089)`
+(i.e. with `absoluteCoordinates="false"`), the configured delimiter `☞` and storage of indices for the word (`30`),
+line (`12`) and page (`13`):
 `foobar☞p:13,l:12,n:30,x:50.7,y:31.4,w:87.1,h:5.1`.
+
+Alternatively, with `absoluteCoordinates="true"`, an OCR box of `(512, 1024, 3192, 256)` and otherwise the same
+settings:
+`foobar☞p:13,l:12,n:30,x:512,y:1024,w:3192,h:256`.
 
 Finally, you just have to configure your schema to use the field type defined above. Storing the content is **not**
 recommended, since it significantly increases the index size and is not used at all for querying and highlighting:
@@ -160,14 +171,14 @@ recommended, since it significantly increases the index size and is not used at 
 ### Highlighting configuration
 
 To enable highlighting using the OCR payloads, add the `OcrHighlighting` component to your Solr
-configuration, configure it with the same `coordinateBits`, `wordBits`, `lineBits` and `pageBits` values
-that were used for the filter in the analyzer chain:
+configuration, configure it with the same `absoluteCoordinates`, `coordinateBits`, `wordBits`, `lineBits` and `pageBits`
+values that were used for the filter in the analyzer chain:
 
 ```xml
 <config>
   <searchComponent name="ocr_highlight"
                    class="de.digitalcollections.solr.plugin.components.ocrhighlighting.OcrHighlighting"
-                   coordinateBits="10" wordBits="0" lineBits="0" pageBits="12" />
+                   absoluteCoordinates="false" coordinateBits="10" wordBits="0" lineBits="0" pageBits="12" />
                    
   <requestHandler name="standard" class="solr.StandardRequestHandler">
     <arr name="last-components">

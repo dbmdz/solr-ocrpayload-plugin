@@ -31,6 +31,7 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
   private int wordBits;
   private int lineBits;
   private int pageBits;
+  private boolean absoluteCoordinates;
 
   @Override
   public void prepare(ResponseBuilder rb) {
@@ -96,6 +97,7 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
     this.pageBits = Integer.parseInt(info.attributes.getOrDefault("pageBits", "0"));
     this.lineBits = Integer.parseInt(info.attributes.getOrDefault("lineBits", "0"));
     this.wordBits = Integer.parseInt(info.attributes.getOrDefault("wordBits", "0"));
+    this.absoluteCoordinates = Boolean.parseBoolean(info.attributes.getOrDefault("absoluteCoordinates", "false"));
   }
 
 
@@ -218,7 +220,7 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
       for (int i = 0; i < freq && (maxHighlightsPerDoc < 0 || ocrList.size() < maxHighlightsPerDoc); i++) {
         dpEnum.nextPosition();
         BytesRef payload = dpEnum.getPayload();
-        OcrInfo info = OcrPayloadHelper.decodeOcrInfo(payload, coordBits, wordBits, lineBits, pageBits);
+        OcrInfo info = OcrPayloadHelper.decodeOcrInfo(payload, coordBits, wordBits, lineBits, pageBits, absoluteCoordinates);
         if (info.getPageIndex() != currentPage) {  // Are we on a new page?
           matchesOnCurrentPage = 0;
           currentPage = info.getPageIndex();
@@ -245,10 +247,18 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
       encoded.add("word", info.getWordIndex());
     }
     encoded.add("term", info.getTerm());
-    encoded.add("x", info.getHorizontalOffset());
-    encoded.add("y", info.getVerticalOffset());
-    encoded.add("width", info.getWidth());
-    encoded.add("height", info.getHeight());
+
+    if (absoluteCoordinates) {
+      encoded.add("x", (int) info.getHorizontalOffset());
+      encoded.add("y", (int) info.getVerticalOffset());
+      encoded.add("width", (int) info.getWidth());
+      encoded.add("height", (int) info.getHeight());
+    } else {
+      encoded.add("x", info.getHorizontalOffset());
+      encoded.add("y", info.getVerticalOffset());
+      encoded.add("width", info.getWidth());
+      encoded.add("height", info.getHeight());
+    }
     return encoded;
   }
 

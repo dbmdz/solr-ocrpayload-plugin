@@ -15,7 +15,7 @@ import java.util.Map;
  * Filter factory for space-efficiently encoding OCR information in token payloads.
  *
  * For information on the expected format of the payload string, see
- * {@link OcrInfo#parse(char[], int, int, int, int, int)}
+ * {@link OcrInfo#parse(char[], int, int, int, int, int, int, boolean)}
  *
  * Takes the following configuration parameters:
  *
@@ -38,7 +38,7 @@ import java.util.Map;
  * Here is a sample configuration with page indices enabled:
  * ```
  * <filter class="de.digitalcollections.lucene.analysis.util.DelimitedOcrInfoPayloadTokenFilterFactory"
- *         coordinateBits="10" wordBits="0" lineBits="0" pageBits="12 />
+ *         coordinateBits="10" wordBits="0" lineBits="0" pageBits="12 absoluteCoordinates="false" />
  * ```
  */
 public class DelimitedOcrInfoPayloadTokenFilterFactory extends TokenFilterFactory {
@@ -49,6 +49,7 @@ public class DelimitedOcrInfoPayloadTokenFilterFactory extends TokenFilterFactor
   private static final String PAGE_BITS_ATTR = "pageBits";
   private static final String LINE_BITS_ATTR = "lineBits";
   private static final String WORD_BITS_ATTR = "wordBits";
+  private static final String ABSOLUTE_COORDS_ATTR = "absoluteCoordinates";
 
   /** Delimiter to use for splitting OCR information from the tokens **/
   private final char delimiter;
@@ -64,6 +65,7 @@ public class DelimitedOcrInfoPayloadTokenFilterFactory extends TokenFilterFactor
     final int pageBits = getInt(args, PAGE_BITS_ATTR, 0);
     final int lineBits = getInt(args, LINE_BITS_ATTR, 0);
     final int wordBits = getInt(args, WORD_BITS_ATTR, 0);
+    final boolean absoluteCoordinates = getBoolean(args, ABSOLUTE_COORDS_ATTR, false);
 
     int coordWidth = coordinateBits * 4;
     int remainder = coordWidth % 8;
@@ -76,7 +78,7 @@ public class DelimitedOcrInfoPayloadTokenFilterFactory extends TokenFilterFactor
       LOGGER.warn("Final payload size {} is not divisible by 8, will be padded. This is wasting {} bits, try playing " +
                   "with the wordBits, lineBits and/or pageBits options.", bitSum, remainder);
     }
-    encoder = new OcrInfoEncoder(coordinateBits, wordBits, lineBits, pageBits);
+    encoder = new OcrInfoEncoder(coordinateBits, wordBits, lineBits, pageBits, absoluteCoordinates);
     if (!args.isEmpty()) {
       throw new IllegalArgumentException("Unknown parameters: " + args);
     }
