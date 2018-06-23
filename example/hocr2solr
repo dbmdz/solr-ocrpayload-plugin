@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+import sys
+from collections import namedtuple
+
+import lxml.etree as ET
+
+PAGE_PATH = './/div[@class="ocr_page"]'
+LINE_PATH = './/span[@class="ocr_line"]'
+WORD_PATH = './span[@class="ocr_cinfo"]'
+
+OcrBox = namedtuple('OcrBox', ('page_idx', 'line_idx', 'word_idx',
+                               'x', 'y', 'width', 'height', 'word'))
+parser = ET.HTMLParser()
+
+
+def make_solr_token(ocrbox):
+    payload = ("p:{page_idx},l:{line_idx},n:{word_idx},x:{x},y:{y},"
+               "w:{width},h:{height}").format(**ocrbox._asdict())
+    return "{word}☛{payload}".format(word=ocrbox.word, payload=payload)
+
+
+def parse_hocr(hocr_path):
+    tree = ET.parse(hocr_path, parser=parser)
+    for page_idx, page_elem in enumerate(tree.findall(PAGE_PATH)):
+        for line_idx, line_elem in enumerate(page_elem.findall(LINE_PATH)):
+            for word_idx, word_elem in enumerate(line_elem.findall(WORD_PATH)):
+                bbox = next(
+                        p.strip() for p in word_elem.attrib['title'].split(';')
+                        if p.strip().startswith('bbox'))
+                x, y, x1, y1 = tuple(int(p) for p in bbox.split(" ")[1:])
+                yield OcrBox(page_idx=page_idx, line_idx=line_idx,
+                        word_idx=word_idx, x=x, y=y, width=x1-x, height=y1-y,
+                        word=word_elem.text)
+
+
+if __name__ == '__main__':
+    hocr_path = sys.argv[1]
+    for idx, box in enumerate(parse_hocr(hocr_path)):
+        if idx > 0:
+            sys.stdout.write(" ")
+        sys.stdout.write(make_solr_token(box))

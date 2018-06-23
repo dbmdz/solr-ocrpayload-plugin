@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+import re
+import tarfile
+from pathlib import Path
+
+import requests
+
+
+OCRTEXT_URL = 'https://zvdd-ng.de/files/google1000_solr.tgz'
+SOLR_HOST = 'localhost:8983'
+SOLR_CORE = 'ocrtest'
+
+
+class SolrException(Exception):
+    def __init__(self, resp, payload):
+        super(resp)
+        this.payload = payload
+
+
+def index_documents(docs):
+    resp = requests.post(
+        "http://{}/solr/{}/update".format(SOLR_HOST, SOLR_CORE),
+        json=docs, params=dict(softCommit="true"))
+    if not resp:
+        raise SolrException(resp.json(), docs)
+
+
+def fetch_ocrtext():
+    with requests.get(OCRTEXT_URL, stream=True) as resp:
+        tf = tarfile.open(fileobj=resp.raw, mode="r|gz")
+        for ti in tf:
+            if not ti.isfile() or not ti.name.endswith('.txt'):
+                continue
+            ident = int(re.findall('\d{4}', ti.name)[0])
+            yield ident, tf.extractfile(ti).read().decode('utf8')
+
+
+def load_ocrtext(base_dir):
+    base_dir = Path(base_dir)
+    for idx, txt in enumerate(sorted(base_dir.glob("./*.txt"))):
+        with txt.open("rt") as fp:
+            yield idx, fp.read()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        txt_iter = load_ocrtext(sys.argv[1])
+    else:
+        txt_iter = fetch_ocrtext()
+    batch = []
+    for ident, text in txt_iter:
+        doc = dict(id=ident, ocr_text=text)
+        batch.append(doc)
+        if len(batch) == 50:
+            print("Indexing batch of 50 documents...")
+            index_documents(batch)
+            batch = []
+    if batch:
+        index_documents(batch)

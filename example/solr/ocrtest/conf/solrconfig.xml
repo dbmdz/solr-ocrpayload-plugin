@@ -1,0 +1,23 @@
+<config>
+  <luceneMatchVersion>7.3</luceneMatchVersion>
+  <dataDir>${solr.data.dir:}</dataDir>
+  <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.StandardDirectoryFactory}"/>
+  <schemaFactory class="ClassicIndexSchemaFactory"/>
+
+  <!-- The highlighting component needs to have the same parameter values as the
+       filter component. -->
+  <searchComponent name="ocr_highlight"
+                   class="de.digitalcollections.solr.plugin.components.ocrhighlighting.OcrHighlighting"
+                   coordinateBits="14" pageBits="12" lineBits="11" wordBits="9"
+                   absoluteCoordinates="true" />
+
+  <requestHandler name="/select" class="solr.SearchHandler">
+    <lst name="defaults">
+      <str name="echoParams">explicit</str>
+      <int name="rows">10</int>
+    </lst>
+    <arr name="last-components">
+      <str>ocr_highlight</str>
+    </arr>
+  </requestHandler>
+</config>

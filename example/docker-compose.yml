@@ -1,0 +1,12 @@
+version: '2'
+services:
+  solr:
+    build: solr
+    ports:
+     - "8983:8983"
+     - "18983:18983"
+     - "8849:8849"
+    volumes:
+      - data-solr:/opt/solr/server/solr/ocrtest
+volumes:
+  data-solr:
