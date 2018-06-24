@@ -32,7 +32,7 @@ The instructions above fetch an archive with the hOCRs from the dataset pre-conv
 - Convert the individual hOCR files to the format needed by the Solr configuration
   (`<word>☛p:<pageNo>,l:<lineNo>,n:<wordNo>,x:<xOffset>,y:<yOffset>,w:<width>,h:<height>`):
   ```sh
-  $ for hocr in Volume_*/hOCR.html; do ./hocr2solr $hocr > $(echo $hocr sed 's/.html/.txt'); done
+  $ for hocr in Volume_*/hOCR.html; do ./hocr2solr $hocr > $(echo $hocr |sed 's/.html/.txt'); done
   ```
 - Index the books by passing the directory with the `.txt`-files as the first parameter:
   ```sh
