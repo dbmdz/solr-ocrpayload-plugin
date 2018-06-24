@@ -17,7 +17,7 @@ The resulting index is 2.03GiB in size, compared to 4.4GiB for the uncompressed 
 ## Running the demo
 - Launch the Docker container: `docker-compose up`
 - Index the pre-converted OCR volumes with `./index_google1000`
-- **Search!** `curl http://localhost:8983/solr/ocrtest/t/select?q=ocr_text:harvard&ocr_hl=true&ocr_hl.fields=ocr_text`
+- **Search!** `curl 'http://localhost:8983/solr/ocrtest/select?q=ocr_text:harvard&ocr_hl=true&ocr_hl.fields=ocr_text'`
 
 
 ## Converting the hOCR to the input format manually
