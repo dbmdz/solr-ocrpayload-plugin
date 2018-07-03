@@ -1,7 +1,7 @@
 <schema name="coordinateHighlight" version="1.0">
   <types>
     <fieldType name="int" class="solr.TrieIntField" precisionStep="0" omitNorms="true" positionIncrementGap="0"/>
-    <fieldtype name="text_ocr" class="solr.TextField" termVectors="true" termPositions="true" termPayloads="true">
+    <fieldtype name="text_ocr" class="solr.TextField" omitTermFreqAndPositions="false">
 
       <analyzer>
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>

@@ -117,8 +117,7 @@ Download the [latest release from GitHub](https://github.com/dbmdz/solr-ocrpaylo
 To use it, first add the `DelimitedOcrInfoPayloadTokenFilterFactory`☕ filter to your analyzer chain (e.g. for a `ocr_text` field type):
 
 ```xml
-<fieldtype name="text_ocr" class="solr.TextField"
-           termVectors="true" termPositions="true" termPayloads="true">
+<fieldtype name="text_ocr" class="solr.TextField" omitTermFreqAndPositions="false">
   <analyzer>
     <tokenizer class="solr.WhitespaceTokenizerFactory"/>
     <filter class="de.digitalcollections.lucene.analysis.util.DelimitedOcrInfoPayloadTokenFilterFactory"

@@ -2,8 +2,11 @@ package de.digitalcollections.solr.plugin.components.ocrhighlighting;
 
 import de.digitalcollections.lucene.analysis.payloads.OcrInfo;
 import de.digitalcollections.lucene.analysis.payloads.OcrPayloadHelper;
+import java.io.IOException;
+import java.util.*;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.*;
+import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.util.BytesRef;
 import org.apache.solr.common.params.SolrParams;
@@ -179,6 +182,9 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
   /**
    * Retrieve all {@link OcrInfo}s for matching terms from a given field in a document.
    *
+   * This takes a lot of inspiration from the {@link org.apache.lucene.search.uhighlight.UnifiedHighlighter}, thanks
+   * to David Smiley (@dsmiley) for pointing out that term vectors are not necessary for this highlighter.
+   *
    * @param reader A reader into the search index
    * @param docId Identifier of the matching document
    * @param fieldName Field to obtain OCR information from
@@ -191,42 +197,50 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
   private OcrInfo[] getOcrInfos(IndexReader reader, int docId, String fieldName, Set<BytesRef> termSet,
                                 int maxHighlightsPerDoc, int maxHighlightsPerPage) throws IOException {
     List<OcrInfo> ocrList = new ArrayList<>();
-    final Fields vectors = reader.getTermVectors(docId);
-    if (vectors == null) {
+
+    final LeafReader leafReader;
+    if (reader instanceof LeafReader) {
+      leafReader = (LeafReader) reader;
+    } else {
+      List<LeafReaderContext> leaves = reader.leaves();
+      LeafReaderContext leafReaderContext = leaves.get(ReaderUtil.subIndex(docId, leaves));
+      leafReader = leafReaderContext.reader();
+      docId -= leafReaderContext.docBase; // adjust 'doc' to be within this leaf reader
+    }
+
+    final Terms terms = leafReader.terms(fieldName);
+    if (terms == null || !terms.hasPositions() || !terms.hasPayloads()) {
       return new OcrInfo[]{};
     }
 
-    final Terms vector = vectors.terms(fieldName);
-    if (vector == null || !vector.hasPositions() || !vector.hasPayloads()) {
-      return new OcrInfo[]{};
-    }
-
-    final TermsEnum termsEnum = vector.iterator();
-    PostingsEnum dpEnum = null;
-    BytesRef text;
+    final TermsEnum termsEnum = terms.iterator();
     int currentPage = -1;
     int matchesOnCurrentPage = 0;
 
-    // TODO: This is currently O(n) in respect to the document vocabulary size.
-    //       Unfortunately there's no easy way to avoid a linear scan with TermsEnum :/
-    while ((text = termsEnum.next()) != null && (maxHighlightsPerDoc < 0 || ocrList.size() < maxHighlightsPerDoc)) {
-      if (!termSet.contains(text)) {
+    for (BytesRef term : termSet) {
+      if (!termsEnum.seekExact(term)) {
         continue;
       }
-      dpEnum = termsEnum.postings(dpEnum, PostingsEnum.POSITIONS | PostingsEnum.PAYLOADS);
-      dpEnum.nextDoc();
+      PostingsEnum postingsEnum = termsEnum.postings(null, PostingsEnum.POSITIONS | PostingsEnum.PAYLOADS);
+      if (postingsEnum == null) {
+        // no offsets or positions available
+        throw new IllegalArgumentException("field '" + fieldName + "' was indexed without offsets, cannot highlight");
+      }
+      if (docId != postingsEnum.advance(docId)) {
+        continue;
+      }
 
-      final int freq = dpEnum.freq();
+      final int freq = postingsEnum.freq();
       for (int i = 0; i < freq && (maxHighlightsPerDoc < 0 || ocrList.size() < maxHighlightsPerDoc); i++) {
-        dpEnum.nextPosition();
-        BytesRef payload = dpEnum.getPayload();
+        postingsEnum.nextPosition();
+        BytesRef payload = postingsEnum.getPayload();
         OcrInfo info = OcrPayloadHelper.decodeOcrInfo(payload, coordBits, wordBits, lineBits, pageBits, absoluteCoordinates);
         if (info.getPageIndex() != currentPage) {  // Are we on a new page?
           matchesOnCurrentPage = 0;
           currentPage = info.getPageIndex();
         }
         if (maxHighlightsPerPage < 0 || matchesOnCurrentPage < maxHighlightsPerPage) {  // Limit matches per page?
-          info.setTerm(text.utf8ToString());
+          info.setTerm(term.utf8ToString());
           ocrList.add(info);
           matchesOnCurrentPage++;
         }
