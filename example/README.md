@@ -11,7 +11,7 @@ The index is configured to store the OCR bounding boxes with the following param
 ## Dataset
 This demo creates an index of the [Google 1000 Books ICDAR 2007 dataset](http://commondatastorage.googleapis.com/books/icdar2007/README.txt).
 It consists of 103,672,774 tokens split across 1000 OCRed books taken from the Google Books project.
-The resulting index is 2.03GiB in size, compared to 4.4GiB for the uncompressed input documents.
+The resulting index is 1.1GiB in size, compared to 4.4GiB for the uncompressed input documents.
 
 
 ## Running the demo
