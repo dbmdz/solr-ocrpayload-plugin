@@ -14,8 +14,8 @@ SOLR_CORE = 'ocrtest'
 
 class SolrException(Exception):
     def __init__(self, resp, payload):
-        super(resp)
-        this.payload = payload
+        self.message = resp
+        self.payload = payload
 
 
 def index_documents(docs):
