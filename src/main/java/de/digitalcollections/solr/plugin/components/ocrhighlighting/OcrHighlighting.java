@@ -25,10 +25,18 @@ import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.util.SolrPluginUtils;
 import org.apache.solr.util.plugin.PluginInfoInitialized;
 
-import java.io.IOException;
-import java.util.*;
-
 public class OcrHighlighting extends SearchComponent implements PluginInfoInitialized {
+  private static final IndexSearcher EMPTY_INDEXSEARCHER;
+
+  static {
+    try {
+      IndexReader emptyReader = new MultiReader();
+      EMPTY_INDEXSEARCHER = new IndexSearcher(emptyReader);
+      EMPTY_INDEXSEARCHER.setQueryCache(null);
+    } catch (IOException bogus) {
+      throw new RuntimeException(bogus);
+    }
+  }
 
   private int coordBits;
   private int wordBits;
@@ -103,6 +111,22 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
     this.absoluteCoordinates = Boolean.parseBoolean(info.attributes.getOrDefault("absoluteCoordinates", "false"));
   }
 
+  private Set<BytesRef> getTerms(Query query, String fieldName) throws IOException {
+    Set<BytesRef> terms = new TreeSet<>();
+    Set<Term> extractPosInsensitiveTermsTarget = new TreeSet<Term>() {
+      @Override
+      public boolean add(Term term) {
+        if (term.field().equals(fieldName)) {
+          return terms.add(term.bytes());
+        }
+        return false;
+      }
+    };
+    query.createWeight(EMPTY_INDEXSEARCHER, false, 1.0f)
+        .extractTerms(extractPosInsensitiveTermsTarget);
+    return terms;
+  }
+
 
   /**
    * Generates a list of highlighted query term coordinates for each item in a list of documents, or returns null if highlighting is disabled.
@@ -119,7 +143,6 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
     int maxHighlightsPerPage = params.getInt("ocr_hl.maxPerPage", -1);
     IndexReader reader = req.getSearcher().getIndexReader();
 
-    FieldQueryAdapter fq = new FieldQueryAdapter(query, reader);
     int[] docIds = toDocIDs(docs);
     String[] keys = getUniqueKeys(req.getSearcher(), docIds);
     String[] fieldNames = params.getParams("ocr_hl.fields");
@@ -131,7 +154,7 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
       for (String fieldName : fieldNames) {
         // We grab the terms in their UTF-8 encoded form to avoid costly decoding operations
         // when checking for term equality down the line
-        Set<BytesRef> termSet = fq.getBytesTermSet(fieldName);
+        Set<BytesRef> termSet = getTerms(query, fieldName);
         OcrInfo[] ocrInfos = getOcrInfos(reader, docId, fieldName, termSet, maxHighlightsPerDoc, maxHighlightsPerPage);
         docBoxes.put(fieldName, ocrInfos);
       }
