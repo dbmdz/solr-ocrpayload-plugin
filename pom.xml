@@ -4,7 +4,7 @@
 
   <artifactId>solr-ocrpayload-plugin</artifactId>
   <groupId>de.digitalcollections.search</groupId>
-  <version>0.2-SNAPSHOT</version>
+  <version>0.2</version>
   <packaging>jar</packaging>
   <name>Solr OCR Coordinate Payload Plugin</name>
   <description>

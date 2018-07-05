@@ -1,4 +1,4 @@
-# 0.2 (unreleased)
+# 0.2
 - Support for absolute coordinates
 - Docker-based example setup
 - Storing Term Vectors is no longer needed, which reduces the index size
