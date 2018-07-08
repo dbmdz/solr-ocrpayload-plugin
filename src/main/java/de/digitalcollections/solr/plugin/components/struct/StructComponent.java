@@ -1,9 +1,9 @@
-package de.digitalcollections.solr.plugin.components.ocrhighlighting;
+package de.digitalcollections.solr.plugin.components.struct;
 
-import de.digitalcollections.lucene.analysis.payloads.OcrInfo;
-import de.digitalcollections.lucene.analysis.payloads.OcrPayloadHelper;
-import java.io.IOException;
-import java.util.*;
+import de.digitalcollections.lucene.analysis.payloads.PayloadSchema;
+import de.digitalcollections.lucene.analysis.payloads.PayloadStruct;
+import org.apache.lucene.analysis.util.ResourceLoader;
+import org.apache.lucene.analysis.util.ResourceLoaderAware;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.IndexSearcher;
@@ -25,7 +25,10 @@ import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.util.SolrPluginUtils;
 import org.apache.solr.util.plugin.PluginInfoInitialized;
 
-public class OcrHighlighting extends SearchComponent implements PluginInfoInitialized {
+import java.io.IOException;
+import java.util.*;
+
+public class StructComponent extends SearchComponent implements PluginInfoInitialized, ResourceLoaderAware {
   private static final IndexSearcher EMPTY_INDEXSEARCHER;
 
   static {
@@ -38,11 +41,19 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
     }
   }
 
-  private int coordBits;
-  private int wordBits;
-  private int lineBits;
-  private int pageBits;
-  private boolean absoluteCoordinates;
+  private String schemaPath;
+  private PayloadSchema schema;
+
+  @Override
+  public void init(PluginInfo info) {
+    this.schemaPath = info.attributes.get("schema");
+  }
+
+
+  @Override
+  public void inform(ResourceLoader loader) throws IOException {
+    this.schema = new PayloadSchema(loader, this.schemaPath);
+  }
 
   @Override
   public void prepare(ResponseBuilder rb) {
@@ -52,9 +63,9 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
 
   @Override
   public void process(ResponseBuilder rb) throws IOException {
-    if (rb.req.getParams().getBool("ocr_hl", false)) {
-      NamedList<Object> highlighting = doHighlighting(rb.getResults().docList, rb.getQuery(), rb.req);
-      rb.rsp.add("ocr_highlighting", highlighting);
+    if (rb.req.getParams().getBool("structs", false)) {
+      NamedList<Object> structs = fetchStructs(rb.getResults().docList, rb.getQuery(), rb.req);
+      rb.rsp.add("struct_payloads", structs);
     }
   }
 
@@ -62,15 +73,15 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
   // Adapted from solr's own HighlightComponent
   @Override
   public void modifyRequest(ResponseBuilder rb, SearchComponent who, ShardRequest sreq) {
-    if (!(rb.req.getParams().getBool("ocr_hl", false))) return;
+    if (!(rb.req.getParams().getBool("structs", false))) return;
 
     // Turn on highlighting only only when retrieving fields
     if ((sreq.purpose & ShardRequest.PURPOSE_GET_FIELDS) != 0) {
       sreq.purpose |= ShardRequest.PURPOSE_GET_HIGHLIGHTS;
       // should already be true...
-      sreq.params.set("ocr_hl", "true");     // TODO: Maybe set hl_params?
+      sreq.params.set("structs", "true");     // TODO: Maybe set hl_params?
     } else {
-      sreq.params.set("ocr_hl", "false");
+      sreq.params.set("structs", "false");
     }
   }
 
@@ -78,7 +89,7 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
   @SuppressWarnings("unchecked")
   @Override
   public void finishStage(ResponseBuilder rb) {
-    if (!rb.req.getParams().getBool("ocr_hl", false) || rb.stage != ResponseBuilder.STAGE_GET_FIELDS) {
+    if (!rb.req.getParams().getBool("structs", false) || rb.stage != ResponseBuilder.STAGE_GET_FIELDS) {
       return;
     }
 
@@ -89,26 +100,17 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
         // can't expect the highlight content if there was an exception for this request
         // this should only happen when using shards.tolerant=true
         .filter(resp -> resp.getException() == null)
-        .map(resp -> (NamedList) resp.getSolrResponse().getResponse().get("ocr_highlighting"))
+        .map(resp -> (NamedList) resp.getSolrResponse().getResponse().get("struct_payloads"))
         .forEach(hl -> SolrPluginUtils.copyNamedListIntoArrayByDocPosInResponse(hl, rb.resultIds, arr));
 
     // remove nulls in case not all docs were able to be retrieved
-    rb.rsp.add("ocr_highlighting", SolrPluginUtils.removeNulls(arr, new SimpleOrderedMap<>()));
+    rb.rsp.add("struct_payloads", SolrPluginUtils.removeNulls(arr, new SimpleOrderedMap<>()));
   }
 
 
   @Override
   public String getDescription() {
     return null;
-  }
-
-  @Override
-  public void init(PluginInfo info) {
-    this.coordBits = Integer.parseInt(info.attributes.getOrDefault("coordinateBits", "12"));
-    this.pageBits = Integer.parseInt(info.attributes.getOrDefault("pageBits", "0"));
-    this.lineBits = Integer.parseInt(info.attributes.getOrDefault("lineBits", "0"));
-    this.wordBits = Integer.parseInt(info.attributes.getOrDefault("wordBits", "0"));
-    this.absoluteCoordinates = Boolean.parseBoolean(info.attributes.getOrDefault("absoluteCoordinates", "false"));
   }
 
   private Set<BytesRef> getTerms(Query query, String fieldName) throws IOException {
@@ -128,37 +130,27 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
   }
 
 
-  /**
-   * Generates a list of highlighted query term coordinates for each item in a list of documents, or returns null if highlighting is disabled.
-   *
-   * @param docs          query results
-   * @param query         the query
-   * @param req           the current request
-   * @return              NamedList containing a {@link NamedList} for each document,
-   *                      which in turns contains `({@link String} field, {@link OcrInfo} coordinates)` pairs.
-   */
-  private NamedList<Object> doHighlighting(DocList docs, Query query, SolrQueryRequest req) throws IOException {
+  private NamedList<Object> fetchStructs(DocList docs, Query query, SolrQueryRequest req) throws IOException {
     SolrParams params = req.getParams();
-    int maxHighlightsPerDoc = params.getInt("ocr_hl.maxPerDoc", -1);
-    int maxHighlightsPerPage = params.getInt("ocr_hl.maxPerPage", -1);
+    int maxStructsPerDoc = params.getInt("structs.maxPerDoc", -1);
     IndexReader reader = req.getSearcher().getIndexReader();
 
     int[] docIds = toDocIDs(docs);
     String[] keys = getUniqueKeys(req.getSearcher(), docIds);
-    String[] fieldNames = params.getParams("ocr_hl.fields");
+    String[] fieldNames = params.getParams("structs.fields");
 
-    // For each document, obtain a mapping from field names to their matching OCR boxes
-    List<Map<String, OcrInfo[]>> boxes = new ArrayList<>();
+    // For each document, obtain a mapping from field names to their matching structs
+    List<Map<String, List<PayloadStruct>>> boxes = new ArrayList<>();
     for (int docId : docIds) {
-      Map<String, OcrInfo[]> docBoxes = new HashMap<>();
+      Map<String, List<PayloadStruct>> docStructs = new HashMap<>();
       for (String fieldName : fieldNames) {
         // We grab the terms in their UTF-8 encoded form to avoid costly decoding operations
         // when checking for term equality down the line
         Set<BytesRef> termSet = getTerms(query, fieldName);
-        OcrInfo[] ocrInfos = getOcrInfos(reader, docId, fieldName, termSet, maxHighlightsPerDoc, maxHighlightsPerPage);
-        docBoxes.put(fieldName, ocrInfos);
+        List<PayloadStruct> structs = getMatchingStructs(reader, docId, fieldName, termSet, maxStructsPerDoc);
+        docStructs.put(fieldName, structs);
       }
-      boxes.add(docBoxes);
+      boxes.add(docStructs);
     }
     return encodeSnippets(keys, fieldNames, boxes);
   }
@@ -202,24 +194,9 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
     return ids;
   }
 
-  /**
-   * Retrieve all {@link OcrInfo}s for matching terms from a given field in a document.
-   *
-   * This takes a lot of inspiration from the {@link org.apache.lucene.search.uhighlight.UnifiedHighlighter}, thanks
-   * to David Smiley (@dsmiley) for pointing out that term vectors are not necessary for this highlighter.
-   *
-   * @param reader A reader into the search index
-   * @param docId Identifier of the matching document
-   * @param fieldName Field to obtain OCR information from
-   * @param termSet Set of matching terms
-   * @param maxHighlightsPerDoc Maximum number of OCR terms per document
-   * @param maxHighlightsPerPage Maximum number of OCR terms per page
-   * @return All OCR information for matching terms on all positions in the field
-   * @throws IOException Error during retrieval from index
-   */
-  private OcrInfo[] getOcrInfos(IndexReader reader, int docId, String fieldName, Set<BytesRef> termSet,
-                                int maxHighlightsPerDoc, int maxHighlightsPerPage) throws IOException {
-    List<OcrInfo> ocrList = new ArrayList<>();
+  private List<PayloadStruct> getMatchingStructs(
+      IndexReader reader, int docId, String fieldName, Set<BytesRef> termSet, int maxPerDoc) throws IOException {
+    List<PayloadStruct> structs = new ArrayList<>();
 
     final LeafReader leafReader;
     if (reader instanceof LeafReader) {
@@ -233,7 +210,7 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
 
     final Terms terms = leafReader.terms(fieldName);
     if (terms == null || !terms.hasPositions() || !terms.hasPayloads()) {
-      return new OcrInfo[]{};
+      return structs;
     }
 
     final TermsEnum termsEnum = terms.iterator();
@@ -254,62 +231,26 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
       }
 
       final int freq = postingsEnum.freq();
-      for (int i = 0; i < freq && (maxHighlightsPerDoc < 0 || ocrList.size() < maxHighlightsPerDoc); i++) {
+      for (int i = 0; i < freq && (maxPerDoc < 0 || structs.size() < maxPerDoc); i++) {
         postingsEnum.nextPosition();
         BytesRef payload = postingsEnum.getPayload();
-        OcrInfo info = OcrPayloadHelper.decodeOcrInfo(payload, coordBits, wordBits, lineBits, pageBits, absoluteCoordinates);
-        if (info.getPageIndex() != currentPage) {  // Are we on a new page?
-          matchesOnCurrentPage = 0;
-          currentPage = info.getPageIndex();
-        }
-        if (maxHighlightsPerPage < 0 || matchesOnCurrentPage < maxHighlightsPerPage) {  // Limit matches per page?
-          info.setTerm(term.utf8ToString());
-          ocrList.add(info);
-          matchesOnCurrentPage++;
-        }
+        structs.add(schema.parseBytePayload(payload));
       }
     }
-    return ocrList.stream().sorted().toArray(OcrInfo[]::new);
-  }
-
-  private NamedList<Object> encodeOcrInfo(OcrInfo info) {
-    NamedList<Object> encoded = new SimpleOrderedMap<>();
-    if (info.getPageIndex() >= 0) {
-      encoded.add("page", info.getPageIndex());
-    }
-    if (info.getLineIndex() >= 0) {
-      encoded.add("line", info.getLineIndex());
-    }
-    if (info.getWordIndex() >= 0) {
-      encoded.add("word", info.getWordIndex());
-    }
-    encoded.add("term", info.getTerm());
-
-    if (absoluteCoordinates) {
-      encoded.add("x", (int) info.getHorizontalOffset());
-      encoded.add("y", (int) info.getVerticalOffset());
-      encoded.add("width", (int) info.getWidth());
-      encoded.add("height", (int) info.getHeight());
-    } else {
-      encoded.add("x", info.getHorizontalOffset());
-      encoded.add("y", info.getVerticalOffset());
-      encoded.add("width", info.getWidth());
-      encoded.add("height", info.getHeight());
-    }
-    return encoded;
+    return structs;
   }
 
   /**
    * Encode the highlighting result into a format that can be used by upstream users.
    */
-  private NamedList<Object> encodeSnippets(String[] keys, String[] fieldNames, List<Map<String, OcrInfo[]>> ocrInfos) {
+  private NamedList<Object> encodeSnippets(String[] keys, String[] fieldNames,
+                                           List<Map<String, List<PayloadStruct>>> structs) {
     NamedList<Object> list = new SimpleOrderedMap<>();
     for (int i = 0; i < keys.length; i++) {
       NamedList<Object> summary = new SimpleOrderedMap<>();
-      Map<String, OcrInfo[]> docBoxes = ocrInfos.get(i);
+      Map<String, List<PayloadStruct>> docStructs = structs.get(i);
       for (String field : fieldNames) {
-        summary.add(field,
-            Arrays.stream(docBoxes.get(field)).sorted().map(this::encodeOcrInfo).toArray());
+        summary.add(field, docStructs.get(field).stream().sorted().map(PayloadStruct::toNamedList));
       }
       list.add(keys[i], summary);
     }

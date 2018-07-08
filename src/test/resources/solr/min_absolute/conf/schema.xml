@@ -5,7 +5,7 @@
 
       <analyzer>
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-        <filter class="de.digitalcollections.lucene.analysis.util.DelimitedOcrInfoPayloadTokenFilterFactory"
+        <filter class="de.digitalcollections.lucene.analysis.util.DelimitedStructPayloadTokenFilterFactory"
           delimiter="☛" coordinateBits="16" absoluteCoordinates="true" pageBits="0" lineBits="0" wordBits="0"/>
         <filter class="solr.StandardFilterFactory"/>
         <filter class="solr.LowerCaseFilterFactory"/>

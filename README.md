@@ -120,7 +120,7 @@ To use it, first add the `DelimitedOcrInfoPayloadTokenFilterFactory`☕ filter t
 <fieldtype name="text_ocr" class="solr.TextField" omitTermFreqAndPositions="false">
   <analyzer>
     <tokenizer class="solr.WhitespaceTokenizerFactory"/>
-    <filter class="de.digitalcollections.lucene.analysis.util.DelimitedOcrInfoPayloadTokenFilterFactory"
+    <filter class="de.digitalcollections.lucene.analysis.util.DelimitedStructPayloadTokenFilterFactory"
             delimiter="☞" absoluteCoordinates="false" coordinateBits="10" wordBits="0" lineBits="0" pageBits="12" />
     <filter class="solr.StandardFilterFactory"/>
     <filter class="solr.LowerCaseFilterFactory"/>
@@ -176,7 +176,7 @@ values that were used for the filter in the analyzer chain:
 ```xml
 <config>
   <searchComponent name="ocr_highlight"
-                   class="de.digitalcollections.solr.plugin.components.ocrhighlighting.OcrHighlighting"
+                   class="de.digitalcollections.solr.plugin.components.ocrhighlighting.StructComponent"
                    absoluteCoordinates="false" coordinateBits="10" wordBits="0" lineBits="0" pageBits="12" />
                    
   <requestHandler name="standard" class="solr.StandardRequestHandler">

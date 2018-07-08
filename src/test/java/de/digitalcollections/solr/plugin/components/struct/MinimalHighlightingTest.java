@@ -1,4 +1,4 @@
-package de.digitalcollections.solr.plugin.components.ocrhighlighting;
+package de.digitalcollections.solr.plugin.components.struct;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;

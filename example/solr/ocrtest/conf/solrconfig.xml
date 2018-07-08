@@ -7,7 +7,7 @@
   <!-- The highlighting component needs to have the same parameter values as the
        filter component. -->
   <searchComponent name="ocr_highlight"
-                   class="de.digitalcollections.solr.plugin.components.ocrhighlighting.OcrHighlighting"
+                   class="de.digitalcollections.solr.plugin.components.struct.StructComponent"
                    coordinateBits="14" pageBits="12" lineBits="11" wordBits="9"
                    absoluteCoordinates="true" />
 

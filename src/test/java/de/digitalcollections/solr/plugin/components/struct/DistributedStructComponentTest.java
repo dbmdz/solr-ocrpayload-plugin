@@ -1,11 +1,11 @@
-package de.digitalcollections.solr.plugin.components.ocrhighlighting;
+package de.digitalcollections.solr.plugin.components.struct;
 
 import org.apache.solr.BaseDistributedSearchTestCase;
 import org.apache.solr.handler.component.SearchComponent;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class DistributedOcrHighlightingTest extends BaseDistributedSearchTestCase {
+public class DistributedStructComponentTest extends BaseDistributedSearchTestCase {
 
   @BeforeClass
   public static void beforeClass() throws Exception {
@@ -16,7 +16,7 @@ public class DistributedOcrHighlightingTest extends BaseDistributedSearchTestCas
     // The highlighting component should be active
     SearchComponent highlighter = h.getCore().getSearchComponent("ocr_highlight");
     assertTrue("wrong highlighter: " + highlighter.getClass(),
-        highlighter instanceof OcrHighlighting);
+        highlighter instanceof StructComponent);
 
     assertU(adoc("ocr_text", "contains|p:20,l:3,n:5,x:11.1,y:22.2,w:33.3,h:44.4, position|p:20,l:4,n:6,x:55.5,y:66.6,w:77.7,h:88.8,", "id", "105"));
 

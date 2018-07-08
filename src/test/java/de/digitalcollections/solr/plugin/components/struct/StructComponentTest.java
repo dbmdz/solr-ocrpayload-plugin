@@ -1,4 +1,4 @@
-package de.digitalcollections.solr.plugin.components.ocrhighlighting;
+package de.digitalcollections.solr.plugin.components.struct;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -7,7 +7,7 @@ import org.apache.solr.handler.component.SearchComponent;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class OcrHighlightingTest extends SolrTestCaseJ4 {
+public class StructComponentTest extends SolrTestCaseJ4 {
   @BeforeClass
   public static void beforeClass() throws Exception {
     initCore("solrconfig.xml", "schema.xml", "src/test/resources/solr", "alldata");
@@ -15,10 +15,10 @@ public class OcrHighlightingTest extends SolrTestCaseJ4 {
     // The highlighting component should be active
     SearchComponent highlighter = h.getCore().getSearchComponent("ocr_highlight");
     assertTrue("wrong highlighter: " + highlighter.getClass(),
-        highlighter instanceof OcrHighlighting);
+        highlighter instanceof StructComponent);
 
     String ocrText = String.join(" ", Files
-        .readAllLines(Paths.get(OcrHighlighting.class.getResource("/data/ocrtext_full.txt").toURI())));
+        .readAllLines(Paths.get(StructComponent.class.getResource("/data/ocrtext_full.txt").toURI())));
     assertU(adoc("ocr_text", "two|p:27,l:13,n:24,x:12.3,y:43.2,w:54.3,h:65.4, one|p:28,l:27,n:64,x:65.4,y:54.3,w:43.2,h:32.1", "id", "101"));
     assertU(adoc("ocr_text", "three|p:28,l:14,n:25,x:12.7,y:48.2,w:54.9,h:65.4, two|p:29,l:27,n:64,x:65.4,y:54.3,w:43.1,h:34.1, five|p:30,l:17,n:80,x:0,y:0,w:0,h:0, "
         + "four|p:31,l:32,n:33,x:11.1,y:11.1,w:11.1,h:11.1", "id", "102"));

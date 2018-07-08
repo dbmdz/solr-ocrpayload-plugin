@@ -11,6 +11,6 @@
   </requestHandler>
 
   <searchComponent name="ocr_highlight"
-                   class="de.digitalcollections.solr.plugin.components.ocrhighlighting.OcrHighlighting"
+                   class="de.digitalcollections.solr.plugin.components.struct.StructComponent"
                    coordinateBits="16" absoluteCoordinates="true" pageBits="0" lineBits="0" wordBits="0" />
 </config>

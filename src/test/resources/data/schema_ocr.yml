@@ -1,0 +1,16 @@
+intfield:
+  type: int
+  key: ui
+  bits: 4
+floatfield:
+  type: float
+  key: f
+  bits: 16
+  signed: true
+boolfield:
+  type: bool
+  key: b
+setfield:
+  type: set
+  key: s
+  values: [one, two, three]

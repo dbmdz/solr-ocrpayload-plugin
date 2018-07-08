@@ -7,7 +7,7 @@
         <tokenizer class="solr.WhitespaceTokenizerFactory"/>
 
         <!-- We store word, line and page offsets alongside the coordinates -->
-        <filter class="de.digitalcollections.lucene.analysis.util.DelimitedOcrInfoPayloadTokenFilterFactory"
+        <filter class="de.digitalcollections.lucene.analysis.util.DelimitedStructPayloadTokenFilterFactory"
           delimiter="☛" coordinateBits="14" pageBits="12" lineBits="11" wordBits="9"
           absoluteCoordinates="true" />
 
