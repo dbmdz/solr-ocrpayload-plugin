@@ -1,4 +1,4 @@
-package de.digitalcollections.lucene.analysis.payloads;
+package de.digitalcollections.lucene.analysis.payloads.fields;
 
 import java.util.LinkedHashSet;
 

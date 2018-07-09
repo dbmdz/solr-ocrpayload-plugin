@@ -1,0 +1,26 @@
+page:
+  key: p
+  type: int
+  bits: 12
+line:
+  key: l
+  type: int
+  bits: 11
+word:
+  key: n
+  type: int
+  bits: 9
+x:
+  type: int
+  bits: 16
+y:
+  type: int
+  bits: 16
+width:
+  key: w
+  type: int
+  bits: 16
+height:
+  key: h
+  type: int
+  bits: 16

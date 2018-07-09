@@ -1,17 +1,7 @@
 package de.digitalcollections.lucene.analysis.payloads;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.stream.Stream;
-
-import static de.digitalcollections.lucene.analysis.payloads.TestUtils.toChars;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 public class OcrInfoTest {
+  /*
   public static Stream<Arguments> fixtureProvider() {
     return Stream.of(
         Arguments.of(new OcrInfo(27, .131f, .527f, .879f, .053f), "p:27,x:13.1,y:52.7,w:87.9,h:5.3"),
@@ -91,4 +81,5 @@ public class OcrInfoTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("coordinates are missing from payload ");
   }
+  */
 }

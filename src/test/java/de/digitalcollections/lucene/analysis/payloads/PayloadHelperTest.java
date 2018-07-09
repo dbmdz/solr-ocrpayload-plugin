@@ -1,17 +1,7 @@
 package de.digitalcollections.lucene.analysis.payloads;
 
-import org.apache.lucene.util.BytesRef;
-import org.assertj.core.data.Offset;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.stream.Stream;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-
 public class PayloadHelperTest {
+  /*
   public static Stream<Arguments> fixtureProvider() {
     byte[] withPage = {(byte) 0x1b, (byte) 0x21, (byte) 0xa1, (byte) 0xce, (byte) 0x10, (byte) 0x36};
     byte[] withoutPage = {(byte)0x23, (byte)0x1e, (byte)0x9f, (byte)0xa8, (byte)0x36};
@@ -79,4 +69,5 @@ public class PayloadHelperTest {
       assertAreAboutEqual(decodedInfo, ocrInfo);
     }      assertAreAboutEqual(decodedInfo, ocrInfo);
   }
+  */
 }

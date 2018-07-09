@@ -1,6 +1,7 @@
 package de.digitalcollections.lucene.analysis.util;
 
 import de.digitalcollections.lucene.analysis.payloads.PayloadSchema;
+import de.digitalcollections.lucene.analysis.payloads.StructEncoder;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.payloads.DelimitedPayloadTokenFilter;
 import org.apache.lucene.analysis.util.ResourceLoader;
@@ -23,12 +24,12 @@ public class DelimitedStructPayloadTokenFilterFactory extends TokenFilterFactory
 
   /** Schema used for parsing and serializing the payloads **/
   private String schemaPath;
-  private PayloadSchema schema;
+  private StructEncoder encoder;
 
   public DelimitedStructPayloadTokenFilterFactory(Map<String, String> args) {
     super(args);
     delimiter = getChar(args, DELIMITER_ATTR, '|');
-    schemaPath = require(args, "schema");
+    schemaPath = require(args, SCHEMA_ATTR);
     if (!args.isEmpty()) {
       throw new IllegalArgumentException("Unknown parameters: " + args);
     }
@@ -36,17 +37,18 @@ public class DelimitedStructPayloadTokenFilterFactory extends TokenFilterFactory
 
   @Override
   public TokenStream create(TokenStream input) {
-    return new DelimitedPayloadTokenFilter(input, delimiter, schema);
+    return new DelimitedPayloadTokenFilter(input, delimiter, encoder);
   }
 
   @Override
   public void inform(ResourceLoader loader) throws IOException {
-    this.schema = new PayloadSchema(loader, this.schemaPath);
-    int payloadSize = this.schema.getSize();
+    PayloadSchema schema = PayloadSchema.load(loader, this.schemaPath);
+    int payloadSize = schema.getSize();
     int wastedBits = payloadSize % 8;
     if (wastedBits != 0) {
       LOGGER.warn("Final payload size {} is not divisible by 8, will be padded. This is wasting {} bits, try playing " +
           "with the wordBits, lineBits and/or pageBits options.", payloadSize, wastedBits);
     }
+    this.encoder = new StructEncoder(schema);
   }
 }

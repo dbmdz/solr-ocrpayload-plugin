@@ -7,6 +7,9 @@ floatfield:
   key: f
   bits: 16
   signed: true
+p:
+  type: percentage
+  bits: 10
 boolfield:
   type: bool
   key: b

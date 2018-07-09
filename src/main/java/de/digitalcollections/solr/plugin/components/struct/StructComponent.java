@@ -2,6 +2,7 @@ package de.digitalcollections.solr.plugin.components.struct;
 
 import de.digitalcollections.lucene.analysis.payloads.PayloadSchema;
 import de.digitalcollections.lucene.analysis.payloads.PayloadStruct;
+import de.digitalcollections.lucene.analysis.payloads.StructParser;
 import org.apache.lucene.analysis.util.ResourceLoader;
 import org.apache.lucene.analysis.util.ResourceLoaderAware;
 import org.apache.lucene.document.Document;
@@ -42,7 +43,7 @@ public class StructComponent extends SearchComponent implements PluginInfoInitia
   }
 
   private String schemaPath;
-  private PayloadSchema schema;
+  private StructParser parser;
 
   @Override
   public void init(PluginInfo info) {
@@ -52,7 +53,8 @@ public class StructComponent extends SearchComponent implements PluginInfoInitia
 
   @Override
   public void inform(ResourceLoader loader) throws IOException {
-    this.schema = new PayloadSchema(loader, this.schemaPath);
+    PayloadSchema schema = PayloadSchema.load(loader, this.schemaPath);
+    this.parser = new StructParser(schema);
   }
 
   @Override
@@ -214,8 +216,6 @@ public class StructComponent extends SearchComponent implements PluginInfoInitia
     }
 
     final TermsEnum termsEnum = terms.iterator();
-    int currentPage = -1;
-    int matchesOnCurrentPage = 0;
 
     for (BytesRef term : termSet) {
       if (!termsEnum.seekExact(term)) {
@@ -234,7 +234,7 @@ public class StructComponent extends SearchComponent implements PluginInfoInitia
       for (int i = 0; i < freq && (maxPerDoc < 0 || structs.size() < maxPerDoc); i++) {
         postingsEnum.nextPosition();
         BytesRef payload = postingsEnum.getPayload();
-        structs.add(schema.parseBytePayload(payload));
+        structs.add(parser.fromBytes(payload));
       }
     }
     return structs;

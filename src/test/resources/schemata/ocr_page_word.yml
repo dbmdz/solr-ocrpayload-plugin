@@ -1,0 +1,22 @@
+page:
+  key: p
+  type: int
+  bits: 12
+word:
+  key: n
+  type: int
+  bits: 9
+x:
+  type: percentage
+  bits: 10
+y:
+  type: percentage
+  bits: 10
+width:
+  key: w
+  type: percentage
+  bits: 10
+height:
+  key: h
+  type: percentage
+  bits: 10
