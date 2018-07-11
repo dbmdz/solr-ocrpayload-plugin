@@ -16,60 +16,6 @@ import java.util.Map;
 public class PayloadSchema {
   private final LinkedHashMap<String, FieldDefinition> fields;
 
-  public static class Builder implements Cloneable {
-    private final LinkedHashMap<String, FieldDefinition> fields;
-
-    Builder() {
-      this.fields = new LinkedHashMap<>();
-    }
-
-    private Builder(LinkedHashMap<String, FieldDefinition> fields) {
-      this.fields = fields;
-    }
-
-    public Builder addIntegerField(String fieldName, String key, int numBits, boolean isSigned) {
-      fields.put(fieldName, new IntegerFieldDefinition(key, numBits, isSigned));
-      return this;
-    }
-
-    public Builder addFloatField(String fieldName, String key, int numBits) {
-      fields.put(fieldName, new FloatFieldDefinition(key, numBits));
-      return this;
-    }
-
-    public Builder addPercentageField(String fieldName, String key, int numBits) {
-      fields.put(fieldName, new PercentageFieldDefinition(key, numBits));
-      return this;
-    }
-
-    public Builder addBooleanField(String fieldName, String key) {
-      fields.put(fieldName, new BoolFieldDefinition(key));
-      return this;
-    }
-
-    public Builder addSetField(String fieldName, String key, LinkedHashSet<String> values) {
-      fields.put(fieldName, new BitSetFieldDefinition(key, values));
-      return this;
-    }
-
-    public PayloadSchema build() {
-      return new PayloadSchema(fields);
-    }
-
-    @Override
-    protected Object clone() throws CloneNotSupportedException {
-      try {
-        return super.clone();
-      } catch (CloneNotSupportedException e) {
-        return new Builder(new LinkedHashMap<>(fields));
-      }
-    }
-  }
-
-  public static Builder builder() {
-    return new Builder();
-  }
-
   public static PayloadSchema load(ResourceLoader loader, String schemaFileName) throws IOException {
     Yaml yml = new Yaml(new SafeConstructor());
     LinkedHashMap<String, FieldDefinition> fields = new LinkedHashMap<>();
@@ -114,10 +60,6 @@ public class PayloadSchema {
 
   public List<String> getFieldNames() {
     return new ArrayList<>(fields.keySet());
-  }
-
-  public void addField(String fieldName, FieldDefinition definition) {
-    this.fields.put(fieldName, definition);
   }
 
   public FieldDefinition getField(String fieldName) {

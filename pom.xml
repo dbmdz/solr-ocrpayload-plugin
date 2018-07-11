@@ -52,6 +52,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <version.assertj>3.10.0</version.assertj>
     <version.assertj-json>1.2.0</version.assertj-json>
+    <version.bytes>0.4.6</version.bytes>
     <version.junit>5.2.0</version.junit>
     <version.junit-platform>1.2.0</version.junit-platform>
     <version.log4j>2.11.0</version.log4j>
@@ -62,6 +63,11 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>at.favre.lib</groupId>
+      <artifactId>bytes</artifactId>
+      <version>${version.bytes}</version>
+    </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>

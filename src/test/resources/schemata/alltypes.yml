@@ -1,12 +1,24 @@
 intfield:
   type: int
+  key: i
+  signed: true
+  bits: 8
+uintfield:
+  type: int
   key: ui
   bits: 4
-floatfield:
+halffloat:
   type: float
-  key: f
+  key: hf
   bits: 16
-  signed: true
+singlefloat:
+  type: float
+  key: sf
+  bits: 32
+doublefloat:
+  type: float
+  key: df
+  bits: 64
 p:
   type: percentage
   bits: 10
