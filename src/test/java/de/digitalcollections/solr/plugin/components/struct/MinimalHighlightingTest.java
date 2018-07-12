@@ -5,10 +5,12 @@ import com.jayway.jsonpath.JsonPath;
 import com.revinate.assertj.json.JsonPathAssert;
 import org.apache.solr.SolrTestCaseJ4;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.math.BigDecimal;
 
+@Ignore
 /** Test that configuring the plugin without page/line/word indices works as expected. **/
 public class MinimalHighlightingTest extends SolrTestCaseJ4 {
   @BeforeClass

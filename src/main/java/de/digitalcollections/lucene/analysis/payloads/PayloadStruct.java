@@ -19,6 +19,7 @@ public class PayloadStruct {
   private final Map<String, Double> percentFields;
   private final Map<String, Boolean> boolFields;
   private final Map<String, Set<String>> bitsetFields;
+  private String term;
 
   static class Builder {
     private PayloadStruct struct;
@@ -88,25 +89,18 @@ public class PayloadStruct {
         namedList.add(fieldName, bitsetFields.get(fieldName).toArray());
       }
     }
+    if (term != null) {
+      namedList.add("term", term);
+    }
     return namedList;
   }
 
   public long getInt(String fieldName) {
-    if (!this.intFields.containsKey(fieldName)) {
-      throw new IllegalArgumentException("Unknown integer field: " + fieldName);
-    }
     return intFields.get(fieldName);
   }
 
   public void setInt(String fieldName, long value) {
-    if (!this.schema.getFieldNames().contains(fieldName)) {
-      throw new IllegalArgumentException("Unknown field: " + fieldName);
-    }
-    FieldDefinition fieldDef = schema.getField(fieldName);
-    if (!(fieldDef instanceof IntegerFieldDefinition)) {
-      throw new IllegalArgumentException("Not an integer field: " + fieldName);
-    }
-    IntegerFieldDefinition intDef = (IntegerFieldDefinition) fieldDef;
+    IntegerFieldDefinition intDef = (IntegerFieldDefinition) schema.getField(fieldName);
     if (!intDef.isSigned() && value < 0) {
       throw new IllegalArgumentException(String.format(
           "Field is not supposed to hold signed values (was: %d): %s", value, fieldName));
@@ -127,38 +121,18 @@ public class PayloadStruct {
   }
 
   public double getFloat(String fieldName) {
-    if (!this.floatFields.containsKey(fieldName)) {
-      throw new IllegalArgumentException("Unknown floating point field: " + fieldName);
-    }
     return floatFields.get(fieldName);
   }
 
   public void setFloat(String fieldName, double value) {
-    if (!this.schema.getFieldNames().contains(fieldName)) {
-      throw new IllegalArgumentException("Unknown field: " + fieldName);
-    }
-    FieldDefinition fieldDef = schema.getField(fieldName);
-    if (!(fieldDef instanceof FloatFieldDefinition)) {
-      throw new IllegalArgumentException("Not a a floating point field: " + fieldName);
-    }
     this.floatFields.put(fieldName, value);
   }
 
   public double getPercentage(String fieldName) {
-    if (!this.percentFields.containsKey(fieldName)) {
-      throw new IllegalArgumentException("Unknown percentage field: " + fieldName);
-    }
     return percentFields.get(fieldName);
   }
 
   public void setPercentage(String fieldName, double percentage) {
-    if (!this.schema.getFieldNames().contains(fieldName)) {
-      throw new IllegalArgumentException("Unknown field: " + fieldName);
-    }
-    FieldDefinition fieldDef = schema.getField(fieldName);
-    if (!(fieldDef instanceof PercentageFieldDefinition)) {
-      throw new IllegalArgumentException("Not a a percentage field: " + fieldName);
-    }
     if (percentage < 0 || percentage > 100) {
       throw new IllegalArgumentException(String.format(
           "Percentage value for field '%s' must be between 0 and 100 (was: %.4f)", fieldName, percentage));
@@ -174,13 +148,7 @@ public class PayloadStruct {
   }
 
   public void setBool(String fieldName, boolean value) {
-    if (!this.schema.getFieldNames().contains(fieldName)) {
-      throw new IllegalArgumentException("Unknown field: " + fieldName);
-    }
     FieldDefinition fieldDef = schema.getField(fieldName);
-    if (!(fieldDef instanceof BoolFieldDefinition)) {
-      throw new IllegalArgumentException("Not a boolean field: " + fieldName);
-    }
     this.boolFields.put(fieldName, value);
   }
 
@@ -192,13 +160,7 @@ public class PayloadStruct {
   }
 
   public void setSet(String fieldName, Set<String> value) {
-    if (!this.schema.getFieldNames().contains(fieldName)) {
-      throw new IllegalArgumentException("Unknown field: " + fieldName);
-    }
     FieldDefinition fieldDef = schema.getField(fieldName);
-    if (!(fieldDef instanceof BitSetFieldDefinition)) {
-      throw new IllegalArgumentException("Not a set field: " + fieldName);
-    }
     BitSetFieldDefinition setFieldDef = (BitSetFieldDefinition) fieldDef;
     Sets.SetView<String> diff = Sets.difference(value, setFieldDef.getValues());
     if (diff.size() > 0) {
@@ -206,5 +168,13 @@ public class PayloadStruct {
           "Input set contains unknown values: {%s}", diff.stream().collect(Collectors.joining(", "))));
     }
     this.bitsetFields.put(fieldName, value);
+  }
+
+  public String getTerm() {
+    return term;
+  }
+
+  public void setTerm(String term) {
+    this.term = term;
   }
 }

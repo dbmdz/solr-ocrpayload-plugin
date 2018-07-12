@@ -3,8 +3,10 @@ package de.digitalcollections.solr.plugin.components.struct;
 import org.apache.solr.BaseDistributedSearchTestCase;
 import org.apache.solr.handler.component.SearchComponent;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class DistributedStructComponentTest extends BaseDistributedSearchTestCase {
 
   @BeforeClass

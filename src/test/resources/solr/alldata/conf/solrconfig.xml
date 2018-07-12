@@ -6,11 +6,11 @@
 
   <requestHandler name="standard" class="solr.StandardRequestHandler">
     <arr name="last-components">
-      <str>ocr_highlight</str>
+      <str>struct_payloads</str>
     </arr>
   </requestHandler>
 
-  <searchComponent name="ocr_highlight"
+  <searchComponent name="struct_payloads"
                    class="de.digitalcollections.solr.plugin.components.struct.StructComponent"
-                   coordinateBits="10" pageBits="12" lineBits="11" wordBits="9" />
+                   schema="structschema.yml" />
 </config>

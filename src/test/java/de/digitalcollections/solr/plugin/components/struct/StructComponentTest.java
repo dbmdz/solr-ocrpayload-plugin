@@ -1,11 +1,12 @@
 package de.digitalcollections.solr.plugin.components.struct;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.apache.solr.SolrTestCaseJ4;
 import org.apache.solr.handler.component.SearchComponent;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class StructComponentTest extends SolrTestCaseJ4 {
   @BeforeClass
@@ -13,7 +14,7 @@ public class StructComponentTest extends SolrTestCaseJ4 {
     initCore("solrconfig.xml", "schema.xml", "src/test/resources/solr", "alldata");
 
     // The highlighting component should be active
-    SearchComponent highlighter = h.getCore().getSearchComponent("ocr_highlight");
+    SearchComponent highlighter = h.getCore().getSearchComponent("struct_payloads");
     assertTrue("wrong highlighter: " + highlighter.getClass(),
         highlighter instanceof StructComponent);
 
@@ -34,23 +35,23 @@ public class StructComponentTest extends SolrTestCaseJ4 {
   public void testSingleQueryTerm() {
     assertQ(
         "single query term",
-        req("q", "two", "sort", "id asc", "ocr_hl", "true","ocr_hl.fields", "ocr_text", "df", "ocr_text"),
-        "count(//lst[@name='ocr_highlighting']/*)=2",
-        "//lst[@name='ocr_highlighting']/lst[@name='101']/arr[@name='ocr_text']/lst[1]/int[@name='page']='27'",
-        "count(//lst[@name='ocr_highlighting']/lst[@name='101']/arr[@name='ocr_text']/lst)=number('1')",
-        "//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst[1]/int[@name='page']='29'",
-        "count(//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst)=number('1')");
+        req("q", "two", "sort", "id asc", "structs", "true","structs.fields", "ocr_text", "df", "ocr_text"),
+        "count(//lst[@name='struct_payloads']/*)=2",
+        "//lst[@name='struct_payloads']/lst[@name='101']/arr[@name='ocr_text']/lst[1]/long[@name='page']='27'",
+        "count(//lst[@name='struct_payloads']/lst[@name='101']/arr[@name='ocr_text']/lst)=number('1')",
+        "//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst[1]/long[@name='page']='29'",
+        "count(//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst)=number('1')");
   }
 
   @Test
   public void testMultipleQueryTerms() {
     assertQ(
         "multiple query terms",
-        req("q", "five four", "sort", "id asc", "ocr_hl", "true","ocr_hl.fields", "ocr_text", "df", "ocr_text"),
-        "count(//lst[@name='ocr_highlighting']/*)=1",
-        "count(//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst)=number('2')",
-        "//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst[1]/int[@name='page']='30'",
-        "//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst[2]/int[@name='page']='31'");
+        req("q", "five four", "sort", "id asc", "structs", "true","structs.fields", "ocr_text", "df", "ocr_text"),
+        "count(//lst[@name='struct_payloads']/*)=1",
+        "count(//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst)=number('2')",
+        "//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst[1]/long[@name='page']='30'",
+        "//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst[2]/long[@name='page']='31'");
 
   }
 
@@ -58,46 +59,48 @@ public class StructComponentTest extends SolrTestCaseJ4 {
   public void testMultipleFuzzyQueryTerms() {
     assertQ(
         "multiple fuzzy query terms",
-        req("q", "fives fours", "sort", "id asc", "ocr_hl", "true","ocr_hl.fields", "ocr_text", "df", "ocr_text"),
-        "count(//lst[@name='ocr_highlighting']/*)=1",
-        "count(//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst)=number('2')",
-        "//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst[1]/int[@name='page']='30'",
-        "//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst[1]/str[@name='term']='five'",
-        "//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst[2]/int[@name='page']='31'",
-        "//lst[@name='ocr_highlighting']/lst[@name='102']/arr[@name='ocr_text']/lst[2]/str[@name='term']='four'");
+        req("q", "fives fours", "sort", "id asc", "structs", "true","structs.fields", "ocr_text", "df", "ocr_text"),
+        "count(//lst[@name='struct_payloads']/*)=1",
+        "count(//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst)=number('2')",
+        "//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst[1]/long[@name='page']='30'",
+        "//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst[1]/str[@name='term']='five'",
+        "//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst[2]/long[@name='page']='31'",
+        "//lst[@name='struct_payloads']/lst[@name='102']/arr[@name='ocr_text']/lst[2]/str[@name='term']='four'");
   }
 
   @Test
   public void testLimitHighlightsPerDoc() {
     assertQ(
         "limit number of highlights per document",
-        req("q", "und", "sort", "id asc", "ocr_hl", "true","ocr_hl.fields", "ocr_text", "ocr_hl.maxPerDoc", "5", "df",
+        req("q", "und", "sort", "id asc", "structs", "true","structs.fields", "ocr_text", "structs.maxPerDoc", "5", "df",
             "ocr_text"),
-        "count(//lst[@name='ocr_highlighting']/lst[@name='103']/arr[@name='ocr_text']/lst)=number('5')");
+        "count(//lst[@name='struct_payloads']/lst[@name='103']/arr[@name='ocr_text']/lst)=number('5')");
   }
 
+  /**
   @Test
   public void testLimitHighlightsPerPage() {
     assertQ(
         "limit number of highlights per page",
-        req("q", "und", "sort", "id asc", "ocr_hl", "true","ocr_hl.fields", "ocr_text", "ocr_hl.maxPerPage", "5", "df",
+        req("q", "und", "sort", "id asc", "structs", "true","structs.fields", "ocr_text", "ocr_hl.maxPerPage", "5", "df",
             "ocr_text"),
         "count(//lst[@name='ocr_highlighting']/lst[@name='103']/arr[@name='ocr_text']/lst[int[@name='page']='183'])=number('5')");
   }
+   **/
 
   @Test
   public void testDynamicField() {
     assertQ(
       "Dynamic field contains term with page number and word position",
-      req("q", "one two", "sort", "id asc", "ocr_hl", "true", "ocr_hl.fields", "body_ocr", "df", "body_ocr"),
-        "count(//lst[@name='ocr_highlighting']/*)=1",
-        "count(//lst[@name='ocr_highlighting']/lst[@name='106']/arr[@name='body_ocr']/lst)=number('2')",
-        "(//lst[@name='ocr_highlighting']/lst[@name='106']/arr[@name='body_ocr']/lst)[1]/int[@name='page']='42'",
-        "(//lst[@name='ocr_highlighting']/lst[@name='106']/arr[@name='body_ocr']/lst)[1]/int[@name='word']='55'",
-        "(//lst[@name='ocr_highlighting']/lst[@name='106']/arr[@name='body_ocr']/lst)[1]/int[@name='line']='13'",
-        "(//lst[@name='ocr_highlighting']/lst[@name='106']/arr[@name='body_ocr']/lst)[2]/int[@name='page']='42'",
-        "(//lst[@name='ocr_highlighting']/lst[@name='106']/arr[@name='body_ocr']/lst)[2]/int[@name='line']='13'",
-        "(//lst[@name='ocr_highlighting']/lst[@name='106']/arr[@name='body_ocr']/lst)[2]/int[@name='word']='66'"
+      req("q", "one two", "sort", "id asc", "structs", "true", "structs.fields", "body_ocr", "df", "body_ocr"),
+        "count(//lst[@name='struct_payloads']/*)=1",
+        "count(//lst[@name='struct_payloads']/lst[@name='106']/arr[@name='body_ocr']/lst)=number('2')",
+        "(//lst[@name='struct_payloads']/lst[@name='106']/arr[@name='body_ocr']/lst)[1]/long[@name='page']='42'",
+        "(//lst[@name='struct_payloads']/lst[@name='106']/arr[@name='body_ocr']/lst)[1]/long[@name='word']='55'",
+        "(//lst[@name='struct_payloads']/lst[@name='106']/arr[@name='body_ocr']/lst)[1]/long[@name='line']='13'",
+        "(//lst[@name='struct_payloads']/lst[@name='106']/arr[@name='body_ocr']/lst)[2]/long[@name='page']='42'",
+        "(//lst[@name='struct_payloads']/lst[@name='106']/arr[@name='body_ocr']/lst)[2]/long[@name='line']='13'",
+        "(//lst[@name='struct_payloads']/lst[@name='106']/arr[@name='body_ocr']/lst)[2]/long[@name='word']='66'"
     );
   }
 }

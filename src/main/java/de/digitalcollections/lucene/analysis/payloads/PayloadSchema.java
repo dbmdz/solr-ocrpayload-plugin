@@ -17,6 +17,8 @@ public class PayloadSchema {
   private final LinkedHashMap<String, FieldDefinition> fields;
 
   public static PayloadSchema load(ResourceLoader loader, String schemaFileName) throws IOException {
+    // TODO: The schema should be keyed after field types and/or names
+    //       so that  we can have multiple schemata in one index
     Yaml yml = new Yaml(new SafeConstructor());
     LinkedHashMap<String, FieldDefinition> fields = new LinkedHashMap<>();
     LinkedHashMap<String, LinkedHashMap<String, Object>> schema = yml.load(loader.openResource(schemaFileName));

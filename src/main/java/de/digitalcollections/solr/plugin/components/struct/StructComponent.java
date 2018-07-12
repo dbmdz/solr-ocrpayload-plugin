@@ -3,8 +3,6 @@ package de.digitalcollections.solr.plugin.components.struct;
 import de.digitalcollections.lucene.analysis.payloads.PayloadSchema;
 import de.digitalcollections.lucene.analysis.payloads.PayloadStruct;
 import de.digitalcollections.lucene.analysis.payloads.StructParser;
-import org.apache.lucene.analysis.util.ResourceLoader;
-import org.apache.lucene.analysis.util.ResourceLoaderAware;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.*;
 import org.apache.lucene.search.IndexSearcher;
@@ -14,6 +12,8 @@ import org.apache.solr.common.params.SolrParams;
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.util.SimpleOrderedMap;
 import org.apache.solr.core.PluginInfo;
+import org.apache.solr.core.SolrCore;
+import org.apache.solr.core.SolrResourceLoader;
 import org.apache.solr.handler.component.ResponseBuilder;
 import org.apache.solr.handler.component.SearchComponent;
 import org.apache.solr.handler.component.ShardRequest;
@@ -25,11 +25,13 @@ import org.apache.solr.search.DocList;
 import org.apache.solr.search.SolrIndexSearcher;
 import org.apache.solr.util.SolrPluginUtils;
 import org.apache.solr.util.plugin.PluginInfoInitialized;
+import org.apache.solr.util.plugin.SolrCoreAware;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class StructComponent extends SearchComponent implements PluginInfoInitialized, ResourceLoaderAware {
+public class StructComponent extends SearchComponent implements PluginInfoInitialized, SolrCoreAware {
   private static final IndexSearcher EMPTY_INDEXSEARCHER;
 
   static {
@@ -48,13 +50,6 @@ public class StructComponent extends SearchComponent implements PluginInfoInitia
   @Override
   public void init(PluginInfo info) {
     this.schemaPath = info.attributes.get("schema");
-  }
-
-
-  @Override
-  public void inform(ResourceLoader loader) throws IOException {
-    PayloadSchema schema = PayloadSchema.load(loader, this.schemaPath);
-    this.parser = new StructParser(schema);
   }
 
   @Override
@@ -142,7 +137,7 @@ public class StructComponent extends SearchComponent implements PluginInfoInitia
     String[] fieldNames = params.getParams("structs.fields");
 
     // For each document, obtain a mapping from field names to their matching structs
-    List<Map<String, List<PayloadStruct>>> boxes = new ArrayList<>();
+    List<Map<String, List<PayloadStruct>>> allStructs = new ArrayList<>();
     for (int docId : docIds) {
       Map<String, List<PayloadStruct>> docStructs = new HashMap<>();
       for (String fieldName : fieldNames) {
@@ -152,9 +147,9 @@ public class StructComponent extends SearchComponent implements PluginInfoInitia
         List<PayloadStruct> structs = getMatchingStructs(reader, docId, fieldName, termSet, maxStructsPerDoc);
         docStructs.put(fieldName, structs);
       }
-      boxes.add(docStructs);
+      allStructs.add(docStructs);
     }
-    return encodeSnippets(keys, fieldNames, boxes);
+    return encodeSnippets(keys, fieldNames, allStructs);
   }
 
   /**
@@ -234,7 +229,9 @@ public class StructComponent extends SearchComponent implements PluginInfoInitia
       for (int i = 0; i < freq && (maxPerDoc < 0 || structs.size() < maxPerDoc); i++) {
         postingsEnum.nextPosition();
         BytesRef payload = postingsEnum.getPayload();
-        structs.add(parser.fromBytes(payload));
+        PayloadStruct struct = parser.fromBytes(payload);
+        struct.setTerm(term.utf8ToString());
+        structs.add(struct);
       }
     }
     return structs;
@@ -250,10 +247,25 @@ public class StructComponent extends SearchComponent implements PluginInfoInitia
       NamedList<Object> summary = new SimpleOrderedMap<>();
       Map<String, List<PayloadStruct>> docStructs = structs.get(i);
       for (String field : fieldNames) {
-        summary.add(field, docStructs.get(field).stream().sorted().map(PayloadStruct::toNamedList));
+        summary.add(field, docStructs.get(field).stream()
+            .map(PayloadStruct::toNamedList).collect(Collectors.toList()));
       }
       list.add(keys[i], summary);
     }
     return list;
+  }
+
+  @Override
+  public void inform(SolrCore solrCore) {
+    if (schemaPath == null) {
+      return;
+    }
+    SolrResourceLoader loader = solrCore.getResourceLoader();
+    try {
+      this.parser = new StructParser(PayloadSchema.load(loader, schemaPath));
+    } catch (IOException e) {
+      throw new RuntimeException("Could not load payload schema from " + schemaPath);
+    }
+
   }
 }
