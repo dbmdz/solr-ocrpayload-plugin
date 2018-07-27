@@ -124,35 +124,35 @@ public class OcrInfo implements Comparable<OcrInfo> {
       String value = m.group(2);
       switch (key) {
         case 'p':
-          info.setPageIndex(parseIntValue(value, pageBits)); break;
+          info.setPageIndex(parseIntValue(value, pageBits, "page", payload)); break;
         case 'l':
-          info.setLineIndex(parseIntValue(value, lineBits)); break;
+          info.setLineIndex(parseIntValue(value, lineBits, "line", payload)); break;
         case 'n':
-          info.setWordIndex(parseIntValue(value, wordBits)); break;
+          info.setWordIndex(parseIntValue(value, wordBits, "word", payload)); break;
         case 'x':
           if (absoluteCoordinates) {
-            info.setHorizontalOffset(parseIntValue(value, coordBits));
+            info.setHorizontalOffset(parseIntValue(value, coordBits, "x", payload));
           } else {
             info.setHorizontalOffset(Float.parseFloat(value)/100f);
           }
           break;
         case 'y':
           if (absoluteCoordinates) {
-            info.setVerticalOffset(parseIntValue(value, coordBits));
+            info.setVerticalOffset(parseIntValue(value, coordBits, "y", payload));
           } else {
             info.setVerticalOffset(Float.parseFloat(value)/100f);
           }
           break;
         case 'w':
           if (absoluteCoordinates) {
-            info.setWidth(parseIntValue(value, coordBits));
+            info.setWidth(parseIntValue(value, coordBits, "w", payload));
           } else {
             info.setWidth(Float.parseFloat(value)/100f);
           }
           break;
         case 'h':
           if (absoluteCoordinates) {
-            info.setHeight(parseIntValue(value, coordBits));
+            info.setHeight(parseIntValue(value, coordBits, "h", payload));
           } else {
             info.setHeight(Float.parseFloat(value)/100f);
           }
@@ -183,11 +183,11 @@ public class OcrInfo implements Comparable<OcrInfo> {
     return info;
   }
 
-  private static int parseIntValue(String value, int numBits) {
+  private static int parseIntValue(String value, int numBits, String type, String payload) {
     int index = Integer.parseInt(value);
     if (index >= IntMath.pow(2, numBits)) {
-      throw new IllegalArgumentException(String.format("Value %d needs more than %d bits (valid values range from 0 to %d).",
-                                                       index, numBits, IntMath.pow(2, numBits) - 1));
+      throw new IllegalArgumentException(String.format("Value %d for %s needs more than %d bits (valid values range from 0 to %d). Payload=%s",
+                                                       index, type, numBits, IntMath.pow(2, numBits) - 1, payload));
     }
     return index;
   }

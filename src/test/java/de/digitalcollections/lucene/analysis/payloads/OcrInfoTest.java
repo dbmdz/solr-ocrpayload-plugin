@@ -65,11 +65,11 @@ public class OcrInfoTest {
     String idxOverflow = "p:12,l:34,n:512,x:78.9,y:87.6,w:54.3,h:2.1";
     assertThatThrownBy(() -> OcrInfo.parse(toChars(idxOverflow), 0, idxOverflow.length(), 9, 11, 12, 12, false))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("512 needs more than 9 bits (valid values range from 0 to 511)");
+        .hasMessageContaining("512 for word needs more than 9 bits (valid values range from 0 to 511). Payload=p:12,l:34,n:512,x:78.9,y:87.6,w:54.3,h:2.1");
     String coordOverFlow = "p:1,l:2,n:3,x:4096,y:2048,w:1024,h:512";
     assertThatThrownBy(() -> OcrInfo.parse(toChars(coordOverFlow), 0, coordOverFlow.length(), 9, 11, 12, 12, true))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("4096 needs more than 12 bits (valid values range from 0 to 4095)");
+        .hasMessageContaining("4096 for x needs more than 12 bits (valid values range from 0 to 4095). Payload=p:1,l:2,n:3,x:4096,y:2048,w:1024,h:512");
   }
 
   @Test
