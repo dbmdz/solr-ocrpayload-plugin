@@ -1,23 +1,29 @@
 language: java
-
 jdk:
-  - openjdk8
-
+- openjdk8
+addons:
+  apt:
+    packages:
+    - libxml2-utils
 before_script:
-  - if [ ! -z "$TRAVIS_TAG" ]; then mvn versions:set -DnewVersion=$TRAVIS_TAG; fi
-
+- PROJECT_VERSION=$(xmllint --xpath '/*[local-name()="project"]/*[local-name()="version"]/text()' pom.xml)
+- if [ ! -z "$TRAVIS_TAG" ]; then mvn versions:set -DnewVersion=$TRAVIS_TAG; fi
 script:
-  - mvn clean install
-
+- mvn clean install
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
-
+- bash <(curl -s https://codecov.io/bash)
+- if [[ "$PROJECT_VERSION" == *SNAPSHOT ]]; then mvn deploy -B -DskipTests=true --settings settings.xml; fi
 deploy:
   provider: releases
   api_key:
     secure: LJjZzy9i0OmNJrav71LbyP7kP9oWzkUXgwCnG95b2bzrDnVw0OQVDpU3nQXB9w0AKgF4CCsHMLo6k383n9LQ+f/AGO91a3urya3Rns+Y7Y6ptk3ZRXA39U7/5Eod8lWApd18l+EWvansZEzkukHH0xXGK+SWuTo5taH6PKmrEQKjw9zxMI07+9lIJcN7vddQzdFanCaincz4pW/EgLIhJXcecyprDjnYQnbEVczYsp7W2+XbLn/rhE7vxK/ZCU1nJojUD3YwMrQgBj5MaiAtAEYSwvuq5N9jpR1glEIqlmhw5kdhLIt+R3FlMicWPhKPW/7t7RmCFAxDclkBaJT+RBF/438wZwUXLZ4KbeAcgB3zRkgK1qVpxx/jJF0Q1zHzrRF1tsJSILI7yJBpE+JPp/881JwLJnUgbuAAWy282m9Kd5G3DL7yhkWlG+Jrau6iN89kh+Nko7KtZ3bosvyzne9cgC+AubTY3pF+BebKA0ZQarolhY24U9yOKDmo1gvllEbnlSsV5N3ga7zhZ6rHMpN/X+3qqn9awffHvXsG0dJpXk968c2FzSgwMk7ibcN1vFcSf0MkByOE5iiZDjOpzS4FOi6j70XLfX+8NI/QcP63jXO7oXzNBBWhQaXM/VrHt0oNP2u56UZTKDmgW+9BSIQtIKRCd3FxKfNtr/ES1ms=
   file_glob: true
-  file: target/*.jar
+  file:
+  - target/*.jar
   skip_cleanup: true
   on:
     tags: true
+env:
+  global:
+  - secure: WGtLFUeolKk0vLZnMnAdkirAVjHN/PbZPSATSMDdVsBZO36JypwDq8OLcHejjuNT0y4O0QAgN4m5iz6qR5iZjf9qcTSp/eZVd5lgt1sLaWIWfNdccS2cwOLcb6RprKAbrfzhIUVoBbJUt6LvSXE/tJM+lHMcIqGdEsW/u3NbfMxFzZdJTjvbjyN/kszRq4CeuLaou/8NhR1RdN26CvPr9RZkcqNsyKgZql5Tny5Bvt1xbxaMeju+2ZKZVyTXgEntiQM92uYVooyyni6Zl0pfXHwo57EoBwiveVaCRtdQDN2AAl+2B8jV5bsIZipUiGEZDs3E9vYjl0/9YUCCKqqiRk2xMi0lqUmLOenTKVHS28WlKEaPCbxTqTtA+ZmQi9tAgt7YqTOnfIUT7RFEZfTMs5DnedwNdOI055ft71Vbjh612nuFWqkoaxqp8gHmBFRF55R6c0Ixq5HRShiERi9x5U4CAeLnkh25QzvZD+PRfVn52fdQ+qaVkpJwBplzr3/m6RjxXjW6l414y7eSBope+dk5BTLPrC1R1KcU3yGSXugJUr8hVrqDVvhoN5JOwL6j5iPThdkDEebifm6nsH4Hm3sP0KlBFOq7P71UbHOhR8Atj6CWKgYePyPaQ+I8KcARxu4wmjh8FShQeVcRRAKkAd2vYa+qQRAhit+EijL8J5M=
+  - secure: aQfHA0oyixmU2KM5H33u5cKYSnn/ToSgNMrriCWdY0zKHwIGQuy8Bw8EV3Zp75Gy+1gEh6JrbM4mpdoxvxxPJd45Eywr+ZYrOlw1viZD3XuxZON842iAtp9GbyzMvpGtRK0MGCMWgPjg1sVGhEM5BgFFR4DABq8xKoj2sp1kNKy+hEZSPOfBiGyCO45zcBcU+9JoKyTez7fKQvOK2Sxv52owQbzrpbAChXUQkZvH8zbGnX8SvA534m1X6VaK3SvxTOo/TIQA3b4iBO2SlHNB7p15D9s2P6WxYP/zBlMqhNSA1A3sz/jqVvYZNbMEPp0ZX+qpzympj6RqI0Oqll20LTFQW1HvPMC+U0aVB8C4N5gGyuTir2+pkGAkRiCtmwg189fjvSArfkDTXTknN8nZMvG+hzT0YhJf7+n/NHR0mcHnoCA+vcs06c3GZq7mxMAJj7rRsqpnOUu5Um9J/vZdqg+UurmjroVqWyzAEAi/OK9dad+aPQME8xEpymx55bhBFxR5vH0cjkqGDTBRjz9x/1Km+MIu1Se3H66OT2jl/8CsWiL7Tw2Tcyz6mTXenYktFil6wsYLyTrzR5rgV+fbhveajG635iRol1/TdwHj8LcGhbG8hNCSJwDLafRrh7mHASNo0qNthQkU3SLBND3qTlDlZrVQtqkf0qFMEqaZBdc=
