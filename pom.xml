@@ -4,7 +4,7 @@
 
   <artifactId>solr-ocrpayload-plugin</artifactId>
   <groupId>de.digitalcollections.search</groupId>
-  <version>0.2.1</version>
+  <version>0.2.2-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Solr OCR Coordinate Payload Plugin</name>
   <description>
@@ -56,7 +56,7 @@
     <version.junit-platform>1.2.0</version.junit-platform>
     <version.log4j>2.11.0</version.log4j>
     <version.slf4j>1.7.25</version.slf4j>
-    <version.solr>7.3.1</version.solr>
+    <version.solr>7.5.0</version.solr>
 
     <version.mvn-jacoco>0.8.1</version.mvn-jacoco>
   </properties>
