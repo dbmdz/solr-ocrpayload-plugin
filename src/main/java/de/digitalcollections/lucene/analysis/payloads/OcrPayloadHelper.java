@@ -1,14 +1,13 @@
 package de.digitalcollections.lucene.analysis.payloads;
 
 import com.google.common.math.IntMath;
-import org.apache.lucene.util.BytesRef;
-
 import java.math.BigInteger;
 import java.util.Arrays;
-
+import org.apache.lucene.util.BytesRef;
 
 /** Helper class to decode and encode OCR information from/into an efficient binary representation. **/
 public class OcrPayloadHelper {
+
   private OcrPayloadHelper() {
     // Cannot be instantiated, is only here for the static methods
   }
@@ -45,6 +44,7 @@ public class OcrPayloadHelper {
    *
    * **Output:**
    * ```
+   * <pre>{@code
    * field     | width  |        scaled value        | binary representation
    * ========================================================================
    * pageIndex | 12bit  |                        837 | 001101000100
@@ -54,6 +54,7 @@ public class OcrPayloadHelper {
    * y         | 10bit  | 0.477909823 * 2^10 ~>  489 |   0111101001
    * width     | 10bit  | 0.978231258 * 2^10 ~> 1002 |   1111101010
    * height    | 10bit  | 0.532390081 * 2^10 ~>  545 |   1000100001
+   * }</pre>
    * ````
    *
    * The resulting byte sequence is as follows (bytes are separated by whitespace):
@@ -81,33 +82,33 @@ public class OcrPayloadHelper {
     }
     if (lineBits > 0) {
       encoded = encoded.shiftLeft(lineBits)
-          .or(BigInteger.valueOf(info.getLineIndex()));
+              .or(BigInteger.valueOf(info.getLineIndex()));
     }
     if (wordBits > 0) {
       encoded = encoded.shiftLeft(wordBits)
-          .or(BigInteger.valueOf(info.getWordIndex()));
+              .or(BigInteger.valueOf(info.getWordIndex()));
     }
     if (info.getHasAbsoluteCoordinates()) {
       encoded = encoded
-          .shiftLeft(coordBits)
-          .or(BigInteger.valueOf(verifyAbsoluteValue((int) info.getHorizontalOffset(), coordBits)))
-          .shiftLeft(coordBits)
-          .or(BigInteger.valueOf(verifyAbsoluteValue((int) info.getVerticalOffset(), coordBits)))
-          .shiftLeft(coordBits)
-          .or(BigInteger.valueOf(verifyAbsoluteValue((int) info.getWidth(), coordBits)))
-          .shiftLeft(coordBits)
-          .or(BigInteger.valueOf(verifyAbsoluteValue((int) info.getHeight(), coordBits)));
+              .shiftLeft(coordBits)
+              .or(BigInteger.valueOf(verifyAbsoluteValue((int) info.getHorizontalOffset(), coordBits)))
+              .shiftLeft(coordBits)
+              .or(BigInteger.valueOf(verifyAbsoluteValue((int) info.getVerticalOffset(), coordBits)))
+              .shiftLeft(coordBits)
+              .or(BigInteger.valueOf(verifyAbsoluteValue((int) info.getWidth(), coordBits)))
+              .shiftLeft(coordBits)
+              .or(BigInteger.valueOf(verifyAbsoluteValue((int) info.getHeight(), coordBits)));
 
     } else {
       encoded = encoded
-          .shiftLeft(coordBits)
-          .or(BigInteger.valueOf(encodeValue(info.getHorizontalOffset(), coordBits)))
-          .shiftLeft(coordBits)
-          .or(BigInteger.valueOf(encodeValue(info.getVerticalOffset(), coordBits)))
-          .shiftLeft(coordBits)
-          .or(BigInteger.valueOf(encodeValue(info.getWidth(), coordBits)))
-          .shiftLeft(coordBits)
-          .or(BigInteger.valueOf(encodeValue(info.getHeight(), coordBits)));
+              .shiftLeft(coordBits)
+              .or(BigInteger.valueOf(encodeValue(info.getHorizontalOffset(), coordBits)))
+              .shiftLeft(coordBits)
+              .or(BigInteger.valueOf(encodeValue(info.getVerticalOffset(), coordBits)))
+              .shiftLeft(coordBits)
+              .or(BigInteger.valueOf(encodeValue(info.getWidth(), coordBits)))
+              .shiftLeft(coordBits)
+              .or(BigInteger.valueOf(encodeValue(info.getHeight(), coordBits)));
     }
 
     byte[] out = encoded.toByteArray();
@@ -133,7 +134,7 @@ public class OcrPayloadHelper {
   private static int verifyAbsoluteValue(int value, int coordBits) {
     if (value >= IntMath.pow(2, coordBits)) {
       throw new IllegalArgumentException(String.format(
-          "Value %d exceeds legal range of %d bits (0 to %d).", value, coordBits, IntMath.pow(2, coordBits)-1));
+              "Value %d exceeds legal range of %d bits (0 to %d).", value, coordBits, IntMath.pow(2, coordBits) - 1));
     }
     return value;
   }
@@ -177,15 +178,16 @@ public class OcrPayloadHelper {
   /**
    * Decode an {@link OcrInfo} instance from the encoded byte array.
    *
-   * @param data        Buffer with encoded binary OCR information
-   * @param coordBits   Number of bits the OCR information was encoded with
-   * @param wordBits    Number of bits the word index was encoded with
-   * @param lineBits    Number of bits the line index was encoded with
-   * @param pageBits    Number of bits the page index was encoded with
+   * @param data                Buffer with encoded binary OCR information
+   * @param coordBits           Number of bits the OCR information was encoded with
+   * @param wordBits            Number of bits the word index was encoded with
+   * @param lineBits            Number of bits the line index was encoded with
+   * @param pageBits            Number of bits the page index was encoded with
+   * @param absoluteCoordinates Whether the coordinates are stored absolute or relative (percent-values)
    * @return The decoded {@link OcrInfo} instance
    */
   public static OcrInfo decodeOcrInfo(BytesRef data, int coordBits, int wordBits, int lineBits, int pageBits,
-                                      boolean absoluteCoordinates) {
+          boolean absoluteCoordinates) {
     int coordMask = IntMath.pow(2, coordBits) - 1;
     OcrInfo info = new OcrInfo();
     info.setHasAbsoluteCoordinates(absoluteCoordinates);
@@ -194,27 +196,26 @@ public class OcrPayloadHelper {
     if (absoluteCoordinates) {
       info.setHeight(encoded.and(BigInteger.valueOf(coordMask)).intValue());
       info.setWidth(encoded.shiftRight(coordBits)
-                           .and(BigInteger.valueOf(coordMask)).intValue());
-      info.setVerticalOffset(encoded.shiftRight(coordBits*2)
-                                    .and(BigInteger.valueOf(coordMask)).intValue());
-      info.setHorizontalOffset(encoded.shiftRight(coordBits*3)
-                                      .and(BigInteger.valueOf(coordMask)).intValue());
-
+              .and(BigInteger.valueOf(coordMask)).intValue());
+      info.setVerticalOffset(encoded.shiftRight(coordBits * 2)
+              .and(BigInteger.valueOf(coordMask)).intValue());
+      info.setHorizontalOffset(encoded.shiftRight(coordBits * 3)
+              .and(BigInteger.valueOf(coordMask)).intValue());
     } else {
       info.setHeight(OcrPayloadHelper.decodeValue(
-          encoded.and(BigInteger.valueOf(coordMask)).intValue(), coordBits));
+              encoded.and(BigInteger.valueOf(coordMask)).intValue(), coordBits));
       info.setWidth(OcrPayloadHelper.decodeValue(
-          encoded.shiftRight(coordBits)
-              .and(BigInteger.valueOf(coordMask)).intValue(), coordBits));
+              encoded.shiftRight(coordBits)
+                      .and(BigInteger.valueOf(coordMask)).intValue(), coordBits));
       info.setVerticalOffset(OcrPayloadHelper.decodeValue(
-          encoded.shiftRight(coordBits*2)
-              .and(BigInteger.valueOf(coordMask)).intValue(), coordBits));
+              encoded.shiftRight(coordBits * 2)
+                      .and(BigInteger.valueOf(coordMask)).intValue(), coordBits));
       info.setHorizontalOffset(OcrPayloadHelper.decodeValue(
-          encoded.shiftRight(coordBits*3)
-              .and(BigInteger.valueOf(coordMask)).intValue(), coordBits));
+              encoded.shiftRight(coordBits * 3)
+                      .and(BigInteger.valueOf(coordMask)).intValue(), coordBits));
     }
 
-    int shift = coordBits*4;
+    int shift = coordBits * 4;
     if (wordBits > 0) {
       info.setWordIndex(encoded.shiftRight(shift).and(makeBitMask(wordBits)).intValue());
       shift += wordBits;

@@ -1,7 +1,6 @@
 package de.digitalcollections.lucene.analysis.payloads;
 
 import com.google.common.math.IntMath;
-
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
@@ -9,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class OcrInfo implements Comparable<OcrInfo> {
+
   private static final Pattern PAYLOAD_PAT = Pattern.compile("(\\D+):([0-9.]+),?");
 
   private boolean hasAbsoluteCoordinates = false;
@@ -107,7 +107,7 @@ public class OcrInfo implements Comparable<OcrInfo> {
    * @return The decoded {@link OcrInfo} instance
    */
   public static OcrInfo parse(char[] buffer, int offset, int length, int wordBits, int lineBits, int pageBits,
-                              int coordBits, boolean absoluteCoordinates) {
+          int coordBits, boolean absoluteCoordinates) {
     OcrInfo info = new OcrInfo();
     info.setHasAbsoluteCoordinates(absoluteCoordinates);
 
@@ -124,61 +124,64 @@ public class OcrInfo implements Comparable<OcrInfo> {
       String value = m.group(2);
       switch (key) {
         case 'p':
-          info.setPageIndex(parseIntValue(value, pageBits, "page", payload)); break;
+          info.setPageIndex(parseIntValue(value, pageBits, "page", payload));
+          break;
         case 'l':
-          info.setLineIndex(parseIntValue(value, lineBits, "line", payload)); break;
+          info.setLineIndex(parseIntValue(value, lineBits, "line", payload));
+          break;
         case 'n':
-          info.setWordIndex(parseIntValue(value, wordBits, "word", payload)); break;
+          info.setWordIndex(parseIntValue(value, wordBits, "word", payload));
+          break;
         case 'x':
           if (absoluteCoordinates) {
             info.setHorizontalOffset(parseIntValue(value, coordBits, "x", payload));
           } else {
-            info.setHorizontalOffset(Float.parseFloat(value)/100f);
+            info.setHorizontalOffset(Float.parseFloat(value) / 100f);
           }
           break;
         case 'y':
           if (absoluteCoordinates) {
             info.setVerticalOffset(parseIntValue(value, coordBits, "y", payload));
           } else {
-            info.setVerticalOffset(Float.parseFloat(value)/100f);
+            info.setVerticalOffset(Float.parseFloat(value) / 100f);
           }
           break;
         case 'w':
           if (absoluteCoordinates) {
             info.setWidth(parseIntValue(value, coordBits, "w", payload));
           } else {
-            info.setWidth(Float.parseFloat(value)/100f);
+            info.setWidth(Float.parseFloat(value) / 100f);
           }
           break;
         case 'h':
           if (absoluteCoordinates) {
             info.setHeight(parseIntValue(value, coordBits, "h", payload));
           } else {
-            info.setHeight(Float.parseFloat(value)/100f);
+            info.setHeight(Float.parseFloat(value) / 100f);
           }
           break;
         default:
           throw new IllegalArgumentException(String.format(
-              "Could not parse OCR bounding box information, string was %s, invalid character was %c",
-              new String(buffer, offset, length), key));
+                  "Could not parse OCR bounding box information, string was %s, invalid character was %c",
+                  new String(buffer, offset, length), key));
       }
     }
     if (info.getHorizontalOffset() < 0 || info.getHorizontalOffset() < 0 || info.getWidth() < 0 || info.getHeight() < 0) {
       throw new IllegalArgumentException(String.format(
-          "One or more coordinates are missing from payload (was %s), make sure you have 'x', 'y', 'w' and 'h' set!",
-          payload));
+              "One or more coordinates are missing from payload (was %s), make sure you have 'x', 'y', 'w' and 'h' set!",
+              payload));
     }
     if (pageBits > 0 && info.getPageIndex() < 0) {
       throw new IllegalArgumentException(String.format(
-          "Page index is missing from payload (was: '%s'), fix payload or set the 'pageBits' option to 0.", payload));
+              "Page index is missing from payload (was: '%s'), fix payload or set the 'pageBits' option to 0.", payload));
     }
     if (lineBits > 0 && info.getLineIndex() < 0) {
       throw new IllegalArgumentException(String.format(
-          "Line index is missing from payload (was: '%s'), fix payload or set the 'lineBits' option to 0.", payload));
+              "Line index is missing from payload (was: '%s'), fix payload or set the 'lineBits' option to 0.", payload));
     }
     if (wordBits > 0 && info.getWordIndex() < 0) {
       throw new IllegalArgumentException(String.format(
-          "Word index is missing from payload (was: '%s'), fix payload or set the 'wordBits' option to 0.", payload));
+              "Word index is missing from payload (was: '%s'), fix payload or set the 'wordBits' option to 0.", payload));
     }
     return info;
   }
@@ -187,7 +190,7 @@ public class OcrInfo implements Comparable<OcrInfo> {
     int index = Integer.parseInt(value);
     if (index >= IntMath.pow(2, numBits)) {
       throw new IllegalArgumentException(String.format("Value %d for %s needs more than %d bits (valid values range from 0 to %d). Payload=%s",
-                                                       index, type, numBits, IntMath.pow(2, numBits) - 1, payload));
+              index, type, numBits, IntMath.pow(2, numBits) - 1, payload));
     }
     return index;
   }
@@ -202,7 +205,7 @@ public class OcrInfo implements Comparable<OcrInfo> {
 
   private void checkCoordinate(float coordinate) {
     if (coordinate > 1) {
-      throw new IllegalArgumentException(String.format("Coordinates can at most be 100, was %1f!", coordinate*100));
+      throw new IllegalArgumentException(String.format("Coordinates can at most be 100, was %1f!", coordinate * 100));
     }
   }
 
@@ -274,26 +277,26 @@ public class OcrInfo implements Comparable<OcrInfo> {
   @Override
   public String toString() {
     return "OcrInfo{"
-        + "horizontalOffset=" + horizontalOffset
-        + ", verticalOffset=" + verticalOffset
-        + ", width=" + width
-        + ", height=" + height
-        + ", pageIndex=" + pageIndex
-        + ", lineIndex=" + lineIndex
-        + ", wordIndex=" + wordIndex
-        + ", term='" + term + '\''
-        + '}';
+            + "horizontalOffset=" + horizontalOffset
+            + ", verticalOffset=" + verticalOffset
+            + ", width=" + width
+            + ", height=" + height
+            + ", pageIndex=" + pageIndex
+            + ", lineIndex=" + lineIndex
+            + ", wordIndex=" + wordIndex
+            + ", term='" + term + '\''
+            + '}';
   }
 
   @Override
   public int compareTo(OcrInfo other) {
     return Comparator
-        .comparing(OcrInfo::getPageIndex)
-        .thenComparing(OcrInfo::getLineIndex)
-        .thenComparing(OcrInfo::getWordIndex)
-        .thenComparing(OcrInfo::getHorizontalOffset)
-        .thenComparing(OcrInfo::getVerticalOffset)
-        .compare(this, other);
+            .comparing(OcrInfo::getPageIndex)
+            .thenComparing(OcrInfo::getLineIndex)
+            .thenComparing(OcrInfo::getWordIndex)
+            .thenComparing(OcrInfo::getHorizontalOffset)
+            .thenComparing(OcrInfo::getVerticalOffset)
+            .compare(this, other);
   }
 
   public boolean getHasAbsoluteCoordinates() {

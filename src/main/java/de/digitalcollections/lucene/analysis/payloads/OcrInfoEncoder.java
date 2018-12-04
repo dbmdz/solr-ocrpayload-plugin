@@ -15,8 +15,10 @@ import org.apache.lucene.util.BytesRef;
  * To use it, configure the {@link de.digitalcollections.lucene.analysis.util.DelimitedOcrInfoPayloadTokenFilterFactory}:
  *
  * ```xml
+ * <pre>{@code
  * <filter class="org.apache.lucene.analysis.util.DelimitedOcrInfoPayloadTokenFilterFactory"
  *         coordBits="12" wordBits="9" lineBits="11" pageBits="12" absoluteCoordinates="false" />
+ * }</pre>
  * ```
  */
 public class OcrInfoEncoder extends AbstractEncoder implements PayloadEncoder {

@@ -26,6 +26,7 @@ import org.apache.solr.util.SolrPluginUtils;
 import org.apache.solr.util.plugin.PluginInfoInitialized;
 
 public class OcrHighlighting extends SearchComponent implements PluginInfoInitialized {
+
   private static final IndexSearcher EMPTY_INDEXSEARCHER;
 
   static {
@@ -49,7 +50,6 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
     // NOP
   }
 
-
   @Override
   public void process(ResponseBuilder rb) throws IOException {
     if (rb.req.getParams().getBool("ocr_hl", false)) {
@@ -58,11 +58,12 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
     }
   }
 
-
   // Adapted from solr's own HighlightComponent
   @Override
   public void modifyRequest(ResponseBuilder rb, SearchComponent who, ShardRequest sreq) {
-    if (!(rb.req.getParams().getBool("ocr_hl", false))) return;
+    if (!(rb.req.getParams().getBool("ocr_hl", false))) {
+      return;
+    }
 
     // Turn on highlighting only only when retrieving fields
     if ((sreq.purpose & ShardRequest.PURPOSE_GET_FIELDS) != 0) {
@@ -84,18 +85,17 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
 
     NamedList.NamedListEntry[] arr = new NamedList.NamedListEntry[rb.resultIds.size()];
     rb.finished.stream()
-        .filter(sreq -> (sreq.purpose & ShardRequest.PURPOSE_GET_HIGHLIGHTS) != 0)
-        .flatMap(sreq -> sreq.responses.stream())
-        // can't expect the highlight content if there was an exception for this request
-        // this should only happen when using shards.tolerant=true
-        .filter(resp -> resp.getException() == null)
-        .map(resp -> (NamedList) resp.getSolrResponse().getResponse().get("ocr_highlighting"))
-        .forEach(hl -> SolrPluginUtils.copyNamedListIntoArrayByDocPosInResponse(hl, rb.resultIds, arr));
+            .filter(sreq -> (sreq.purpose & ShardRequest.PURPOSE_GET_HIGHLIGHTS) != 0)
+            .flatMap(sreq -> sreq.responses.stream())
+            // can't expect the highlight content if there was an exception for this request
+            // this should only happen when using shards.tolerant=true
+            .filter(resp -> resp.getException() == null)
+            .map(resp -> (NamedList) resp.getSolrResponse().getResponse().get("ocr_highlighting"))
+            .forEach(hl -> SolrPluginUtils.copyNamedListIntoArrayByDocPosInResponse(hl, rb.resultIds, arr));
 
     // remove nulls in case not all docs were able to be retrieved
     rb.rsp.add("ocr_highlighting", SolrPluginUtils.removeNulls(arr, new SimpleOrderedMap<>()));
   }
-
 
   @Override
   public String getDescription() {
@@ -123,10 +123,9 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
       }
     };
     query.createWeight(EMPTY_INDEXSEARCHER, false, 1.0f)
-        .extractTerms(extractPosInsensitiveTermsTarget);
+            .extractTerms(extractPosInsensitiveTermsTarget);
     return terms;
   }
-
 
   /**
    * Generates a list of highlighted query term coordinates for each item in a list of documents, or returns null if highlighting is disabled.
@@ -218,7 +217,7 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
    * @throws IOException Error during retrieval from index
    */
   private OcrInfo[] getOcrInfos(IndexReader reader, int docId, String fieldName, Set<BytesRef> termSet,
-                                int maxHighlightsPerDoc, int maxHighlightsPerPage) throws IOException {
+          int maxHighlightsPerDoc, int maxHighlightsPerPage) throws IOException {
     List<OcrInfo> ocrList = new ArrayList<>();
 
     final LeafReader leafReader;
@@ -309,7 +308,7 @@ public class OcrHighlighting extends SearchComponent implements PluginInfoInitia
       Map<String, OcrInfo[]> docBoxes = ocrInfos.get(i);
       for (String field : fieldNames) {
         summary.add(field,
-            Arrays.stream(docBoxes.get(field)).sorted().map(this::encodeOcrInfo).toArray());
+                Arrays.stream(docBoxes.get(field)).sorted().map(this::encodeOcrInfo).toArray());
       }
       list.add(keys[i], summary);
     }

@@ -3,13 +3,12 @@ package de.digitalcollections.lucene.analysis.util;
 import de.digitalcollections.lucene.analysis.payloads.OcrInfo;
 import de.digitalcollections.lucene.analysis.payloads.OcrInfoEncoder;
 import de.digitalcollections.lucene.analysis.payloads.OcrPayloadHelper;
+import java.util.Map;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.payloads.DelimitedPayloadTokenFilter;
 import org.apache.lucene.analysis.util.TokenFilterFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * Filter factory for space-efficiently encoding OCR information in token payloads.
@@ -37,11 +36,14 @@ import java.util.Map;
  *
  * Here is a sample configuration with page indices enabled:
  * ```
+ * <pre>{@code
  * <filter class="de.digitalcollections.lucene.analysis.util.DelimitedOcrInfoPayloadTokenFilterFactory"
  *         coordinateBits="10" wordBits="0" lineBits="0" pageBits="12 absoluteCoordinates="false" />
+ * }</pre>
  * ```
  */
 public class DelimitedOcrInfoPayloadTokenFilterFactory extends TokenFilterFactory {
+
   private static final Logger LOGGER = LoggerFactory.getLogger(OcrPayloadHelper.class);
 
   private static final String COORD_BITS_ATTR = "coordinateBits";
@@ -75,8 +77,8 @@ public class DelimitedOcrInfoPayloadTokenFilterFactory extends TokenFilterFactor
     int bitSum = coordWidth + pageBits + lineBits + wordBits;
     remainder = bitSum % 8;
     if (remainder != 0) {
-      LOGGER.warn("Final payload size {} is not divisible by 8, will be padded. This is wasting {} bits, try playing " +
-                  "with the wordBits, lineBits and/or pageBits options.", bitSum, remainder);
+      LOGGER.warn("Final payload size {} is not divisible by 8, will be padded. This is wasting {} bits, try playing "
+              + "with the wordBits, lineBits and/or pageBits options.", bitSum, remainder);
     }
     encoder = new OcrInfoEncoder(coordinateBits, wordBits, lineBits, pageBits, absoluteCoordinates);
     if (!args.isEmpty()) {
