@@ -1,13 +1,13 @@
 # Solr OCR Coordinate Payload Plugin
+
+[![Javadocs](https://javadoc.io/badge/de.digitalcollections.search/solr-ocrpayload-plugin.svg)](https://javadoc.io/doc/de.digitalcollections.search/solr-ocrpayload-plugin)
+[![Build Status](https://img.shields.io/travis/dbmdz/solr-ocrpayload-plugin/master.svg)](https://travis-ci.org/dbmdz/solr-ocrpayload-plugin)
+[![Codecov](https://img.shields.io/codecov/c/github/dbmdz/solr-ocrpayload-plugin/master.svg)](https://codecov.io/gh/dbmdz/solr-ocrpayload-plugin)
+[![MIT License](https://img.shields.io/github/license/dbmdz/solr-ocrpayload-plugin.svg)](LICENSE)
+[![GitHub release](https://img.shields.io/github/release/dbmdz/solr-ocrpayload-plugin.svg)](https://github.com/dbmdz/solr-ocrpayload-plugin/releases)
+[![Maven Central](https://img.shields.io/maven-central/v/de.digitalcollections.search/solr-ocrpayload-plugin.svg)](https://search.maven.org/search?q=a:solr-ocrpayload-plugin)
+
 *Efficient indexing and bounding-box "highlighting" for OCR text*
-
-
-[![Javadocs](http://javadoc.io/badge/de.digitalcollections.search/solr-ocrpayload-plugin.svg)](http://javadoc.io/doc/de.digitalcollections.search/solr-ocrpayload-plugin)
-[![Build Status](https://travis-ci.org/dbmdz/solr-ocrpayload-plugin.svg?branch=master)](https://travis-ci.org/dbmdz/solr-ocrpayload-plugin)
-[![codecov](https://codecov.io/gh/dbmdz/solr-ocrpayload-plugin/branch/master/graph/badge.svg)](https://codecov.io/gh/dbmdz/solr-ocrpayload-plugin)
-[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![GitHub release](https://img.shields.io/github/release/dbmdz/solr-ocrpayload-plugin.svg?maxAge=2592000)](https://github.com/dbmdz/solr-ocrpayload-plugin/releases)
-[![Maven Central](https://img.shields.io/maven-central/v/de.digitalcollections.search/solr-ocrpayload-plugin.svg?maxAge=2592000)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22solr-ocrpayload-plugin%22)
 
 ## tl;dr
 
