@@ -1,3 +1,5 @@
+# :construction: Deprecated in favor of [solr-ocrhighlighting](https://github.com/dbmdz/solr-ocrhighlighting)
+
 # Solr OCR Coordinate Payload Plugin
 
 [![Javadocs](https://javadoc.io/badge/de.digitalcollections.search/solr-ocrpayload-plugin.svg)](https://javadoc.io/doc/de.digitalcollections.search/solr-ocrpayload-plugin)
